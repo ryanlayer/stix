@@ -4,9 +4,9 @@ HTS_ROOT=../../htslib
 GIGGLE_ROOT=../../giggle
 CFLAGS=-O2 -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
 #CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
-INCLUDES=-I$(HTS_ROOT) -I$(GIGGLE_ROOT)
-LIBS=-ldl -lz -lm -pthread -lcurl -lcrypto
-#LIBS+=-lssl -llzma -lbz2
+INCLUDES=-I$(HTS_ROOT) -I$(GIGGLE_ROOT) -I$(SQLITE_ROOT)
+LIBS=-ldl -lz -lm -pthread -lcurl -llzma -lbz2
+#LIBS+=-lssl
 SQLITE_ROOT=../../sqlite-amalgamation-3170000
 CC=gcc
 
@@ -37,8 +37,8 @@ $(BIN)/%: %.c $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ \
 		$(INCLUDES) \
 		-DSAMTOOLS=1 \
-		$(HTS_ROOT)/libhts.a \
 		$(GIGGLE_ROOT)/lib/libgiggle.a \
+		$(HTS_ROOT)/libhts.a \
 		$(SQLITE_ROOT)/sqlite3.o \
 		$(LIBS)
 

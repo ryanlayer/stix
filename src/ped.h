@@ -2,6 +2,7 @@
 #define __PED_H__
 
 #include <stdio.h>
+#include <stdint.h>
 #include <strings.h>
 #include <stdlib.h>
 #include <ctype.h>

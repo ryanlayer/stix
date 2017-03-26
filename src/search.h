@@ -3,6 +3,7 @@
 
 #include <src/giggle_index.h>
 #include <src/lists.h>
+#include <stdint.h>
 
 enum stix_sv_type
 {

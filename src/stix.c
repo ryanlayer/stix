@@ -285,67 +285,70 @@ void print_results(struct giggle_index *gi,
     }
 
     sqlite3 *db = NULL;
-     
-    char ***uniq_vals;
-    uint32_t num_uniq_vals;
-    uint32_t **uniq_groups_ids;
-    uint32_t *uniq_groups_sizes;
-    num_uniq_vals = ped_get_uniq_col_groups(ped_db_file_name,
-                                            &db,
-                                            agg_cols,
-                                            num_agg_cols,
-                                            filter,
-                                            &uniq_vals,
-                                            &uniq_groups_ids,
-                                            &uniq_groups_sizes);
+         
+    if (num_agg_cols > 0) {
+        char ***uniq_vals;
+        uint32_t num_uniq_vals;
+        uint32_t **uniq_groups_ids;
+        uint32_t *uniq_groups_sizes;
+        fprintf(stderr, "filter:%p\n", filter);
+        num_uniq_vals = ped_get_uniq_col_groups(ped_db_file_name,
+                                                &db,
+                                                agg_cols,
+                                                num_agg_cols,
+                                                filter,
+                                                &uniq_vals,
+                                                &uniq_groups_ids,
+                                                &uniq_groups_sizes);
 
-    for (i = 0; i < num_uniq_vals; ++i) {
-        uint32_t j;
-        char *group_name_tmp, *group_name;
-        ret = asprintf(&group_name, "%s", uniq_vals[i][0]);
-        for (j = 1; j < num_agg_cols; ++j) {
-            ret = asprintf(&group_name_tmp,
-                           "%s,%s",
-                           group_name,
-                           uniq_vals[i][j]);
+        for (i = 0; i < num_uniq_vals; ++i) {
+            uint32_t j;
+            char *group_name_tmp, *group_name;
+            ret = asprintf(&group_name, "%s", uniq_vals[i][0]);
+            for (j = 1; j < num_agg_cols; ++j) {
+                ret = asprintf(&group_name_tmp,
+                               "%s,%s",
+                               group_name,
+                               uniq_vals[i][j]);
+                free(group_name);
+                group_name = group_name_tmp;
+            }
+
+            ret = stix_get_summary(sample_alt_depths,
+                                   uniq_groups_ids[i],
+                                   uniq_groups_sizes[i],
+                                   &zero_count,
+                                   &one_count,
+                                   &Q1,
+                                   &Q2,
+                                   &Q3,
+                                   &min,
+                                   &max,
+                                   counts);
+
+            if (json_out) {
+                printf(",{"
+                       "\"name\":\"%s\", "
+                       "\"zero_count\":\"%d\", "
+                       "\"one_count\":\"%d\","
+                       "\"quantiles\":[\"%u\",\"%u\",\"%u\"], "
+                       "\"counts\":[\"%u\",\"%u\",\"%u\",\"%u\"]"
+                       "}\n",
+                       group_name,
+                       zero_count,
+                       one_count,
+                       Q1, Q2, Q3,
+                       counts[0], counts[1], counts[2], counts[3]);
+            } else  {
+                printf("%s\t0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d\n",
+                       group_name,
+                       zero_count, one_count, 
+                       Q1, Q2, Q3,
+                       counts[0], counts[1], counts[2], counts[3]);
+            }
+
             free(group_name);
-            group_name = group_name_tmp;
         }
-
-        ret = stix_get_summary(sample_alt_depths,
-                               uniq_groups_ids[i],
-                               uniq_groups_sizes[i],
-                               &zero_count,
-                               &one_count,
-                               &Q1,
-                               &Q2,
-                               &Q3,
-                               &min,
-                               &max,
-                               counts);
-
-        if (json_out) {
-            printf(",{"
-                   "\"name\":\"%s\", "
-                   "\"zero_count\":\"%d\", "
-                   "\"one_count\":\"%d\","
-                   "\"quantiles\":[\"%u\",\"%u\",\"%u\"], "
-                   "\"counts\":[\"%u\",\"%u\",\"%u\",\"%u\"]"
-                   "}\n",
-                   group_name,
-                   zero_count,
-                   one_count,
-                   Q1, Q2, Q3,
-                   counts[0], counts[1], counts[2], counts[3]);
-        } else  {
-            printf("%s\t0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d\n",
-                   group_name,
-                   zero_count, one_count, 
-                   Q1, Q2, Q3,
-                   counts[0], counts[1], counts[2], counts[3]);
-        }
-
-        free(group_name);
     }
 
     if (json_out)

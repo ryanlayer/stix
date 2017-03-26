@@ -1,0 +1,25 @@
+language: c
+
+before_install:
+    - cd $TRAVIS_BUILD_DIR
+    - git clone https://github.com/samtools/htslib.git
+    - cd htslib
+    - pwd
+    - autoheader
+    - autoconf
+    - ./configure --disable-bz2 --disable-lzma --enable-libcurl
+    - make
+    - cd $TRAVIS_BUILD_DIR
+    - git clone https://github.com/ryanlayer/giggle.git
+    - cd giggle
+    - make
+    - cd $TRAVIS_BUILD_DIR
+
+script:
+    - cd test/unit/
+    - make
+    - cd $TRAVIS_BUILD_DIR
+    - make
+    - cd $TRAVIS_BUILD_DIR
+    - cd test/func/
+    - ./stix_test.sh
