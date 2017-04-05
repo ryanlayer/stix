@@ -2,6 +2,9 @@
 #include <sysexits.h>
 #include <limits.h>
 
+#include <htslib/hfile.h>
+#include <htslib/vcf.h>
+
 //from giggle
 #include <src/giggle_index.h>
 #include <src/ll.h>
@@ -218,22 +221,16 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
             }
         }
         giggle_iter_destroy(&gqi);
-
-        /*
-        struct file_data *fd = 
-            (struct file_data *)unordered_list_get((*gi)->file_idx->index, i);
-        fprintf(stderr,
-                "%s %u %u\n",
-                fd->file_name,
-                (*sample_alt_depths)[i].first,
-                (*sample_alt_depths)[i].second);
-        */
     }
 
-    free(in_left_bp->chrm);
-    free(in_right_bp->chrm);
-    free(in_left_bp);
-    free(in_right_bp);
+    if (in_left_bp != NULL) {
+        free(in_left_bp->chrm);
+        free(in_left_bp);
+    }
+    if (in_right_bp != NULL) {
+        free(in_right_bp->chrm);
+        free(in_right_bp);
+    }
 
     giggle_query_result_destroy(&gqr);
 
@@ -316,6 +313,14 @@ uint32_t stix_get_quartile_counts(uint32_t *full,
         counts[1] = 0;
         counts[2] = 0;
         counts[3] = 1;
+    } else if (num_uniq == 0) {
+        *Q1 = 0;
+        *Q2 = 0;
+        *Q3 = 0;
+        counts[0] = 0;
+        counts[1] = 0;
+        counts[2] = 0;
+        counts[3] = 0;
     }
 
     free(uniq);
@@ -363,7 +368,7 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
     *min = INT_MAX;
     *max = 0;
 
-    uint32_t *full = (uint32_t *)malloc(num_samples * sizeof(uint32_t));
+    uint32_t *full = (uint32_t *)calloc(num_samples,sizeof(uint32_t));
     uint32_t full_i = 0;
 
     uint32_t i, sum, idx;
@@ -396,5 +401,94 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
                                             counts);
     free(full);
     return 0;
+}
+//}}}
+
+//{{{uint32_t stix_get_vcf_breakpoints(htsFile *fp,
+uint32_t stix_get_vcf_breakpoints(htsFile *fp,
+                                  bcf_hdr_t *hdr,
+                                  bcf1_t *line,
+                                  struct stix_breakpoint *left,
+                                  struct stix_breakpoint *right)
+{
+    char *sv_type = NULL;
+    int sv_type_len = 0;
+    uint32_t ret;
+
+    int size = sizeof(int32_t);
+
+    int ci_size = 2*sizeof(int);
+    int *ciend = (int *) calloc(2, sizeof(int));
+    int *cipos = (int *) calloc(2, sizeof(int));
+
+
+    ret = bcf_get_info_string(hdr,
+                              line,
+                              "SVTYPE",
+                              &sv_type,
+                              &sv_type_len);
+
+    if (ret == -1)
+        return 1;
+
+
+    if (strcmp(sv_type, "DEL") == 0) {
+        const char *chrm = bcf_hdr_id2name(hdr, line->rid);
+
+        int end_size = sizeof(int);
+        int *end = (int *) malloc(end_size);
+
+        ret = bcf_get_info_int32(hdr,
+                                 line,
+                                 "END",
+                                 &end,
+                                 &end_size);
+
+        if (ret == -1) {
+            free(end);
+            return 1;
+        }
+
+        if (left->chrm != NULL)
+            free(left->chrm);
+
+        left->chrm = strdup(chrm);
+        left->start = line->pos;
+        left->end = line->pos;
+
+        ret = bcf_get_info_int32(hdr,
+                                 line,
+                                 "CIPOS",
+                                 &cipos,
+                                 &ci_size);
+
+        if (ret != -1) {
+            left->start += cipos[0];
+            left->end += cipos[1];
+        }
+
+        if (right->chrm != NULL)
+            free(right->chrm);
+        right->chrm = strdup(chrm);
+        right->start = *end;
+        right->end = *end;
+
+        ret = bcf_get_info_int32(hdr,
+                                 line,
+                                 "CIEND",
+                                 &ciend,
+                                 &ci_size);
+        if (ret != -1) {
+            right->start += ciend[0];
+            right->end += ciend[1];
+        }
+
+        free(end);
+        free(ciend);
+        free(cipos);
+        return 0;
+    }
+
+    return 1;
 }
 //}}}

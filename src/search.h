@@ -5,6 +5,9 @@
 #include <src/lists.h>
 #include <stdint.h>
 
+#include <htslib/hfile.h>
+#include <htslib/vcf.h>
+
 enum stix_sv_type
 {
     DEL, DUP, INS, INV, BND
@@ -80,4 +83,9 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
                           uint32_t *max,
                           int32_t *counts);
 
+uint32_t stix_get_vcf_breakpoints(htsFile *fp,
+                                  bcf_hdr_t *hdr,
+                                  bcf1_t *line,
+                                  struct stix_breakpoint *left,
+                                  struct stix_breakpoint *right);
 #endif

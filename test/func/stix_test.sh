@@ -47,7 +47,7 @@ run make_ped_db \
         -i ../data/four_alt_sort_b \
         -p ../data/four.ped \
         -d ../data/four.ped.db \
-        -c 5
+        -c 6
 assert_exit_code 0
 if [ -n $SQLITE3 ];then
     assert_equal 2 $( $SQLITE3 ../data/four.ped.db "SELECT COUNT(*) FROM ped WHERE Population=='CEU'" )
