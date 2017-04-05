@@ -431,6 +431,9 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
     if (ret == -1)
         return 1;
 
+    if (sv_type_len < 3)
+        return 1;
+
 
     if (strcmp(sv_type, "DEL") == 0) {
         const char *chrm = bcf_hdr_id2name(hdr, line->rid);
