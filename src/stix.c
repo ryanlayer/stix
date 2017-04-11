@@ -12,6 +12,8 @@
 #include "ped.h"
 #include "search.h"
 
+char *stix_sv_type_strings[5] = { "DEL", "DUP", "INS", "INV", "BND" };
+
 uint32_t parse_aggregate_csv(char *aggregate,
                              char ***agg_cols);
 
@@ -486,11 +488,19 @@ int main(int argc, char **argv)
                     malloc(sizeof(struct stix_breakpoint));
             right->chrm = NULL;
 
+            enum stix_sv_type type;
+
             while (bcf_read(fp, hdr, line) == 0) {
-                if (stix_get_vcf_breakpoints(fp, hdr, line, left, right) == 0) {
+                if (stix_get_vcf_breakpoints(fp,
+                                             hdr,
+                                             line,
+                                             left,
+                                             right,
+                                             &type) == 0) {
                     /*
                     fprintf(stdout,
-                            "%s:%u-%u\t%s:%u-%u\t",
+                            "%s %s:%u-%u\t%s:%u-%u\t",
+                            stix_sv_type_strings[type],
                             left->chrm,
                             left->start,
                             left->end,
@@ -502,7 +512,7 @@ int main(int argc, char **argv)
                     uint32_t num_sample_alt_depths = 
                             stix_run_giggle_query(&gi,
                                                   index_dir_name,
-                                                  DEL,
+                                                  type,
                                                   left,
                                                   right,
                                                   slop,

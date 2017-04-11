@@ -1312,16 +1312,24 @@ void test_stix_get_vcf_breakpoints(void)
 
     uint32_t num_sv_dels = 0;
     uint32_t i = 0;
+    enum stix_sv_type sv_type;
     while (bcf_read(fp, hdr, line) == 0) {
-        if (stix_get_vcf_breakpoints(fp, hdr, line, left, right) == 0) {
-            num_sv_dels+=1;
-            TEST_ASSERT_EQUAL(0, strcmp("13", left->chrm));
-            TEST_ASSERT_EQUAL(0, strcmp("13", right->chrm));
-            TEST_ASSERT_EQUAL(A_pos[i] - 1 + A_cipos_0[i], left->start);
-            TEST_ASSERT_EQUAL(A_pos[i] - 1 + A_cipos_1[i], left->end);
-            TEST_ASSERT_EQUAL(A_end[i]  + A_ciend_0[i], right->start);
-            TEST_ASSERT_EQUAL(A_end[i]  + A_ciend_1[i], right->end);
-            i+=1;
+        if (stix_get_vcf_breakpoints(fp,
+                                     hdr,
+                                     line,
+                                     left,
+                                     right,
+                                     &sv_type) == 0) {
+            if (sv_type == DEL) {
+                num_sv_dels+=1;
+                TEST_ASSERT_EQUAL(0, strcmp("13", left->chrm));
+                TEST_ASSERT_EQUAL(0, strcmp("13", right->chrm));
+                TEST_ASSERT_EQUAL(A_pos[i] - 1 + A_cipos_0[i], left->start);
+                TEST_ASSERT_EQUAL(A_pos[i] - 1 + A_cipos_1[i], left->end);
+                TEST_ASSERT_EQUAL(A_end[i]  + A_ciend_0[i], right->start);
+                TEST_ASSERT_EQUAL(A_end[i]  + A_ciend_1[i], right->end);
+                i+=1;
+            }
         }
     }
 

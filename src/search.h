@@ -8,6 +8,8 @@
 #include <htslib/hfile.h>
 #include <htslib/vcf.h>
 
+char *stix_sv_type_strings[5];
+
 enum stix_sv_type
 {
     DEL, DUP, INS, INV, BND
@@ -50,6 +52,12 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
                         uint32_t evidence_type,
                         uint32_t slop);
 
+uint32_t stix_check_dup(struct stix_breakpoint *q_left_bp,
+                        struct stix_breakpoint *q_right_bp,
+                        struct stix_breakpoint *in_left_bp,
+                        struct stix_breakpoint *in_right_bp,
+                        uint32_t evidence_type,
+                        uint32_t slop);
 
 struct stix_breakpoint *stix_region_to_breakpoint(char *region);
 
@@ -87,5 +95,6 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                                   bcf_hdr_t *hdr,
                                   bcf1_t *line,
                                   struct stix_breakpoint *left,
-                                  struct stix_breakpoint *right);
+                                  struct stix_breakpoint *right,
+                                  enum stix_sv_type *sv_type);
 #endif
