@@ -304,7 +304,8 @@ int main(int argc, char **argv)
         f_is_set = 0,
         a_is_set = 0,
         F_is_set = 0,
-        j_is_set = 0;
+        j_is_set = 0,
+        t_is_set = 0;
 
     char *index_dir_name = NULL;
     char *ped_file_name= NULL;
@@ -314,10 +315,11 @@ int main(int argc, char **argv)
     char *l_region = NULL;
     char *aggregate = NULL;
     char *filter = NULL;
+    char *sv_type = NULL;
     uint32_t slop = 0;
     uint32_t col_id = 1;
 
-    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:j")) != -1) {
+    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:jt:")) != -1) {
         switch (c) {
             case 'i':
                 i_is_set = 1;
@@ -362,6 +364,10 @@ int main(int argc, char **argv)
             case 'j':
                 j_is_set = 1;
                 break;
+            case 't':
+                t_is_set = 1;
+                sv_type = optarg;
+                break;
             case 'h':
                 return help(EX_OK);
             case '?':
@@ -373,7 +379,8 @@ int main(int argc, char **argv)
                      (optopt == 'l') ||
                      (optopt == 'f') ||
                      (optopt == 'a') ||
-                     (optopt == 'F') )
+                     (optopt == 'F') ||
+                     (optopt == 't') )
                     fprintf (stderr,
                              "Option -%c requires an argument.\n",
                              optopt);
@@ -431,15 +438,21 @@ int main(int argc, char **argv)
         struct stix_breakpoint *left = NULL, *right = NULL;
 
         if ((l_is_set == 1) &&  // left interval
-            (r_is_set == 1) ) { // right interval
+            (r_is_set == 1) &&  // right interval
+            (t_is_set == 1) ) { // sv type
 
             left = stix_region_to_breakpoint(l_region);
             right = stix_region_to_breakpoint(r_region);
 
+            enum stix_sv_type query_type = DEL;
+
+            if (strcmp(sv_type,"DUP") == 0)
+                query_type = DUP;
+
             uint32_t num_sample_alt_depths = 
                     stix_run_giggle_query(&gi,
                                           index_dir_name,
-                                          DEL,
+                                          query_type,
                                           left,
                                           right,
                                           slop,
