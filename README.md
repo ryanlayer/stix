@@ -15,9 +15,11 @@
 ### DEL
 
 #### 19:12694867-12698924
+##### STIX
     STIX_ZERO STIX_ONE STIX_QUANTS STIX_QUANT_DEPTHS
     0         0        0,4,11      0,0,1,1
 
+##### 1KG low coverge SV callset (Sudmant et al., Nature 2015) ([VCF](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/), [Paper](http://www.nature.com/nature/journal/v526/n7571/full/nature15394.html))
     #CHROM POS       REF ALT   INFO                                        NA12878 NA12890 NA12889
     19     12694867  G   <CN0> CIEND=0,1;CIPOS=0,1;END=12698924            1|1     1|1     1|1
 High coverage | Low coverage
@@ -28,9 +30,11 @@ High coverage | Low coverage
 
 #### 5:1022803-1025877
 
+##### STIX
     STIX_ZERO STIX_ONE STIX_QUANTS STIX_QUANT_DEPTHS
     3         0        0,0,0       0,0,0,0
 
+##### 1KG low coverge SV callset (Sudmant et al., Nature 2015) ([VCF](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/), [Paper](http://www.nature.com/nature/journal/v526/n7571/full/nature15394.html))
     #CHROM POS       REF ALT   INFO                                        NA12878 NA12890 NA12889
     5      1022803   C   <CN0> CIEND=-500,1000;CIPOS=-1000,500;END=1025877 1|1     1|1     1|1
 High coverage | Low coverage
@@ -40,9 +44,11 @@ High coverage | Low coverage
 ---
 
 #### 5:144059460-144059732
+##### STIX
     STIX_ZERO STIX_ONE STIX_QUANTS STIX_QUANT_DEPTHS
     0         0        4,8,10      0,1,1,1
 
+##### 1KG low coverge SV callset (Sudmant et al., Nature 2015) ([VCF](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/), [Paper](http://www.nature.com/nature/journal/v526/n7571/full/nature15394.html))
     #CHROM POS        REF ALT   INFO                                        NA12878 NA12890 NA12889
     4      113985874  .   <DEL> END=113986369                               0|0     0|0     0|0
 High coverage | Low coverage
