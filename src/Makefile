@@ -1,12 +1,12 @@
 BIN=../bin
 OBJ=../obj
-HTS_ROOT=../../htslib
 GIGGLE_ROOT=../../giggle
+HTS_ROOT=$(GIGGLE_ROOT)/lib/htslib
 CFLAGS=-O2 -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
 #CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
 INCLUDES=-I$(HTS_ROOT) -I$(GIGGLE_ROOT) -I$(SQLITE_ROOT)
-LIBS=-ldl -lz -lm -pthread -lcurl -llzma -lbz2
-#LIBS+=-lssl
+LIBS=-ldl -lz -lm -pthread -lcurl
+LIBS+=-lcrypto
 SQLITE_ROOT=../../sqlite-amalgamation-3170000
 CC=gcc
 

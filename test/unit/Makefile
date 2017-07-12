@@ -1,6 +1,6 @@
 UNITY_ROOT=./unity
-HTS_ROOT=../../../htslib/
 GIGGLE_ROOT=../../../giggle/
+HTS_ROOT=$(GIGGLE_ROOT)/lib/htslib/
 SQLITE_ROOT=../../../sqlite-amalgamation-3170000
 CC=gcc
 SRC=../../src/
@@ -43,7 +43,7 @@ endif
 	    $(HTS_ROOT)/libhts.a \
 	    $(GIGGLE_ROOT)/lib/libgiggle.a \
 	    $(SQLITE_ROOT)/sqlite3.o \
-	    -lz -lm -lcurl -lcrypto -lssl
+	    -lz -lm -lcurl -lcrypto 
 	#rm $@_Runner.c
 
 test:

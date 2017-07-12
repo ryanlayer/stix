@@ -437,7 +437,6 @@ int main(int argc, char **argv)
                 num_rows,
                 ped_file_name);
         return EX_OK;
-
     }
 
     if ((i_is_set == 1) &&  // giggle index
@@ -467,6 +466,8 @@ int main(int argc, char **argv)
 
             if (strcmp(sv_type,"DUP") == 0)
                 query_type = DUP;
+            else if (strcmp(sv_type,"INV") == 0)
+                query_type = INV;
 
             uint32_t num_sample_alt_depths = 
                     stix_run_giggle_query(&gi,
@@ -532,7 +533,6 @@ int main(int argc, char **argv)
                 num_cols = 1;
             }
 
-
             while (bcf_read(fp, hdr, line) == 0) {
                 if (stix_get_vcf_breakpoints(fp,
                                              hdr,
@@ -540,6 +540,7 @@ int main(int argc, char **argv)
                                              left,
                                              right,
                                              &type) == 0) {
+
                     uint32_t num_sample_alt_depths = 
                             stix_run_giggle_query(&gi,
                                                   index_dir_name,
@@ -568,28 +569,31 @@ int main(int argc, char **argv)
                                                     &min,
                                                     &max,
                                                     counts);
-
+                
                     if (v_is_set == 1) {
-                        char *stix_sample_depth_string = NULL, *tmp_string = NULL;
+                        char *stix_sample_depth_string = NULL,
+                             *tmp_string = NULL;
+
                         for (i = 0; i < num_sample_alt_depths; ++i) {
-                            if (sample_alt_depths[i].first + sample_alt_depths[i].second > 0) {
+                            if (sample_alt_depths[i].first + 
+                                sample_alt_depths[i].second > 0) {
 
                                 char **col_vals = NULL, **col_names = NULL;
-                                num_col_vals = ped_get_cols_info_by_id(ped_db_file_name,
-                                                                       &db,
-                                                                       cols,
-                                                                       num_cols,
-                                                                       i,
-                                                                       &col_vals,
-
-                                                                       &col_names);
+                                num_col_vals = ped_get_cols_info_by_id(
+                                        ped_db_file_name,
+                                        &db,
+                                        cols,
+                                        num_cols,
+                                        i,
+                                        &col_vals,
+                                        &col_names);
                                 if (stix_sample_depth_string != NULL) {
                                     ret = asprintf(&tmp_string,
                                                    "%s,%s|%u",
                                                    stix_sample_depth_string,
                                                    col_vals[0],
                                                    sample_alt_depths[i].first + 
-                                                    sample_alt_depths[i].second);
+                                                   sample_alt_depths[i].second);
                                 } else {
                                     ret = asprintf(&tmp_string,
                                                    "%s|%u",
@@ -608,13 +612,15 @@ int main(int argc, char **argv)
                         }
 
                         if (stix_sample_depth_string != NULL) {
-                            ret = bcf_update_info_string(hdr,
-                                                         line,
-                                                         "STIX_SAMPLE_DEPTH",
-                                                         stix_sample_depth_string);
+                            ret = bcf_update_info_string(
+                                    hdr,
+                                    line,
+                                    "STIX_SAMPLE_DEPTH",
+                                    stix_sample_depth_string);
                             if (ret != 0)
                                 errx(EX_DATAERR,
-                                     "Error adding STIX_SAMPLE_DEPTH to info field.\n");
+                                     "Error adding STIX_SAMPLE_DEPTH to "
+                                     "info field.\n");
                         }
                     }
 
@@ -624,7 +630,8 @@ int main(int argc, char **argv)
                                                 &zero_count,
                                                 1);
                     if (ret != 0)
-                        errx(EX_DATAERR, "Error adding STIX_ZERO to info field.\n");
+                        errx(EX_DATAERR,
+                             "Error adding STIX_ZERO to info field.\n");
 
                     ret = bcf_update_info_int32(hdr,
                                                 line,
@@ -632,7 +639,8 @@ int main(int argc, char **argv)
                                                 &one_count,
                                                 1);
                     if (ret != 0)
-                        errx(EX_DATAERR, "Error adding STIX_ONE to info field.\n");
+                        errx(EX_DATAERR,
+                             "Error adding STIX_ONE to info field.\n");
 
                     uint32_t quants[3] = {Q1,Q2,Q3};
                     ret = bcf_update_info_int32(hdr,

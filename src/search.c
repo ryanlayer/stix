@@ -104,11 +104,16 @@ uint32_t stix_check_sv(struct stix_breakpoint *q_left_bp,
                                   evidence_type,
                                   slop);
             break;
+        case INV:
+            return stix_check_inv(q_left_bp,
+                                  q_right_bp,
+                                  in_left_bp,
+                                  in_right_bp,
+                                  evidence_type,
+                                  slop);
+            break;
         case INS:
             errx(1,"INS not yet supported");
-            break;
-        case INV:
-            errx(1,"INV not yet supported");
             break;
         case BND:
             errx(1,"BND not yet supported");
@@ -116,6 +121,110 @@ uint32_t stix_check_sv(struct stix_breakpoint *q_left_bp,
         default:
             errx(1,"Unknown SV type");
    } 
+}
+//}}}
+
+//{{{uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
+uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
+                        struct stix_breakpoint *q_right_bp,
+                        struct stix_breakpoint *in_left_bp,
+                        struct stix_breakpoint *in_right_bp,
+                        uint32_t evidence_type,
+                        uint32_t slop)
+{
+    /*
+     *       i_l   i_r
+     *        v     v
+     *   q_l| |   | |q_r
+     * ------^ABCDEFG$-----
+     *     +.......+       
+     *       +....+
+     *        -........-
+     *          -....-
+     *     +========-
+     *        -========+
+     *
+     *     +..-   +..- 
+     *       +..-   +..-      
+     *     +==+     +==+
+     * ------^GFEDCBA$-----
+     */
+
+
+
+    // Check strand config ++ / -- for paired-end and +- or -+ for split-read
+    if (evidence_type == 0) { // paired-end
+        if (in_left_bp->strand != in_right_bp->strand)
+            return 0;
+    } else { //split read
+        if (in_left_bp->strand == in_right_bp->strand)
+            return 0;
+    }
+
+
+    // Ignore "chr" prefix
+    char *q_chrm_test = q_right_bp->chrm;
+    char *in_chrm_test = in_right_bp->chrm;
+
+    if (strncmp("chr", q_chrm_test, 3) == 0)
+        q_chrm_test += 3;
+
+    if (strncmp("chr", in_chrm_test, 3) == 0)
+        in_chrm_test += 3; 
+
+    // Make sure its intra-chhromosomal
+    if (strcmp(q_chrm_test, in_chrm_test) != 0)
+        return 0;
+
+
+
+    // Make sure its intra-chhromosomal
+    //if (strcmp(q_right_bp->chrm, in_right_bp->chrm) != 0)
+        //return 0;
+
+    /*
+     *           q_l           q_r
+     *             s|----|e      s|----|e
+     *       ------------ABCDEFGHIJKLMNO--------------
+     *                 +..............+
+     *       ------------ONMLKJIHGFEDCBA--------------
+     *                 +..-
+     */
+
+    /*
+    fprintf(stderr, "%d %d %d %d %d %d\n",
+    in_left_bp->strand == 1 ,
+    in_right_bp->strand == 1,
+    in_left_bp->end >= q_left_bp->start - slop,
+    in_left_bp->start < q_left_bp->end,
+    in_right_bp->end >= q_right_bp->start - slop,
+    in_right_bp->start < q_right_bp->end);
+    */
+ 
+    if ( (in_left_bp->strand == 1) && (in_right_bp->strand == 1) &&//strand
+         (in_left_bp->end >= q_left_bp->start - slop) && // left side
+         (in_left_bp->start < q_left_bp->end ) &&
+         (in_right_bp->end >= q_right_bp->start - slop)  && // right side
+         (in_right_bp->start < q_right_bp->end ) )
+        return 1;
+
+    /*
+     *                q_l           q_r
+     *                  s|----|e      s|----|e
+     *       ------------ABCDEFGHIJKLMNO--------------
+     *                    -..............-
+     *
+     *       ------------ONMLKJIHGFEDCBA--------------
+     *                                +..-
+     */
+    if ( (in_left_bp->strand == -1) && (in_right_bp->strand == -1) &&//strand
+         (in_left_bp->end >= q_left_bp->start) && // left side
+         (in_left_bp->start < q_left_bp->end + slop) &&
+         (in_right_bp->end >= q_right_bp->start)  && // right side
+         (in_right_bp->start < q_right_bp->end + slop) )
+        return 1;
+
+    return 0;
 }
 //}}}
 
@@ -129,15 +238,25 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
 {
     // Check strand config +- for paired-end and ++ or -- for split-read
     if (evidence_type == 0) { // paired-end
-        if (!(in_left_bp->strand == 1) && (in_right_bp->strand == -1))
+        if ((in_left_bp->strand != 1) || (in_right_bp->strand != -1))
             return 0;
     } else { //split read
         if (in_left_bp->strand != in_right_bp->strand)
             return 0;
     }
 
+    // Ignore "chr" prefix
+    char *q_chrm_test = q_right_bp->chrm;
+    char *in_chrm_test = in_right_bp->chrm;
+
+    if (strncmp("chr", q_chrm_test, 3) == 0)
+        q_chrm_test += 3;
+
+    if (strncmp("chr", in_chrm_test, 3) == 0)
+        in_chrm_test += 3; 
+
     // Make sure its intra-chhromosomal
-    if (strcmp(q_right_bp->chrm, in_right_bp->chrm) != 0)
+    if (strcmp(q_chrm_test, in_chrm_test) != 0)
         return 0;
 
     /*
@@ -174,17 +293,27 @@ uint32_t stix_check_dup(struct stix_breakpoint *q_left_bp,
                         uint32_t evidence_type,
                         uint32_t slop)
 {
-    // Check strand config +- for paired-end and ++ or -- for split-read
+    // Check strand config -+ for paired-end and ++ or -- for split-read
     if (evidence_type == 0) { // paired-end
-        if (!(in_left_bp->strand == -1) && (in_right_bp->strand == 1))
+        if ((in_left_bp->strand != -1) || (in_right_bp->strand != 1))
             return 0;
     } else { //split read
         if (in_left_bp->strand != in_right_bp->strand)
             return 0;
     }
 
+    // Ignore "chr" prefix
+    char *q_chrm_test = q_right_bp->chrm;
+    char *in_chrm_test = in_right_bp->chrm;
+
+    if (strncmp("chr", q_chrm_test, 3) == 0)
+        q_chrm_test += 3;
+
+    if (strncmp("chr", in_chrm_test, 3) == 0)
+        in_chrm_test += 3; 
+
     // Make sure its intra-chhromosomal
-    if (strcmp(q_right_bp->chrm, in_right_bp->chrm) != 0)
+    if (strcmp(q_chrm_test, in_chrm_test) != 0)
         return 0;
 
     /*
@@ -206,9 +335,24 @@ uint32_t stix_check_dup(struct stix_breakpoint *q_left_bp,
      *
      */
 
-    // Make sure the right sides intersect 
-    if ( (in_right_bp->end >= q_right_bp->start) &&       // end after start
-         (in_right_bp->start - slop < q_right_bp->end) )  // start before end
+    /*
+    fprintf(stderr,
+            "(in_right_bp->end >= q_right_bp->start) && "
+            "(in_right_bp->start - slop < q_right_bp->end)\n"
+            "(%u >= %u) && "
+            "(%u - %u < %u)\n",
+            in_right_bp->end,
+            q_right_bp->start,
+            in_right_bp->start,
+            slop,
+            q_right_bp->end);
+    */
+
+    // Make sure the left and right sides intersect 
+    if ( (in_left_bp->end +slop >= q_left_bp->start) &&        // l end after start
+         (in_left_bp->start < q_left_bp->end) &&  // l start before end
+         (in_right_bp->end >= q_right_bp->start) &&        // r end after start
+         (in_right_bp->start - slop < q_right_bp->end) )   // r start before end
         return 1;
     else
         return 0;
@@ -241,26 +385,76 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
 
     if (*gi == NULL) {
         *gi = giggle_load(giggle_index_dir,
-                          uint64_t_ll_giggle_set_data_handler);
+                          block_store_giggle_set_data_handler);
         if (*gi == NULL)
             errx(1,
                  "ERROR stix_run_giggle_query(): "
                  "Error loading giggle index %s.", 
                  giggle_index_dir);
-
-        giggle_data_handler.giggle_collect_intersection =
-                giggle_collect_intersection_data_in_block;
-        giggle_data_handler.map_intersection_to_offset_list =
-                leaf_data_map_intersection_to_offset_list;
     }
 
     uint32_t q_start = q_left_bp->start;
     uint32_t q_end = q_left_bp->end;
 
+    /*
+     * DEL
+     *               q_left_bp
+     *               |   q_right_bp
+     *               |   |
+     *               v   v
+     *     Ref  -----^ABC$-----
+     *            +......-
+     *               +......-
+     *     q_start|  |q_end
+     *
+     *              +===-
+     *                 +===-
+     *  Sample  -------^$------
+     *
+     * DUP
+     *               q_left_bp
+     *               |       q_right_bp
+     *               |       |
+     *               v       v
+     *     Ref  -----^ABCDEFG$-----
+     *                -...+ 
+     *                  -...+
+     *        q_start|   |q_end
+     *           
+     *                    +==-
+     *                      +==-
+     *  Sample  -----^ABCDEFGABCDEFG$-----
+     *
+     * INV
+     *               q_left_bp
+     *               |       q_right_bp
+     *               |       |
+     *               v       v
+     *     Ref  -----^ABCDEFG$-----
+     *             +........+
+     *               +....+
+     *                 -.......-
+     *                  -....-
+     *    q_start|   |q_end
+     *                q_start|   |q_end
+     *             
+     *             +==-           
+     *               +==-         
+     *                      +==-
+     *                    +==-
+     *  Sample  -----^GFEDCAB$-----
+     *
+     *
+     */
+
     if (sv_type == DEL)
         q_start -= slop;
     else if (sv_type == DUP)
         q_end += slop;
+    else if (sv_type == INV) {
+        q_start -= slop;
+        q_end += slop;
+    }
 
     struct giggle_query_result *gqr = giggle_query(*gi,
                                                    q_left_bp->chrm,
@@ -280,23 +474,23 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
 
     struct stix_breakpoint *in_left_bp = NULL, *in_right_bp = NULL;
     uint32_t evidence_type, idx;
+    // loop over the search results for each sample that we care about
     for(i = 0; i < N; i++) {
         if (num_samples > 0)
             idx = sample_ids[i];
         else
             idx = i;
 
-
         char *result;
         struct giggle_query_iter *gqi = giggle_get_query_itr(gqr, idx);
 
         while (giggle_query_next(gqi, &result) == 0) {
-
+            // parse the extra string info for the matching line in the source
+            // file
             uint32_t ret = stix_parse_result(result,
                                              &in_left_bp,
                                              &in_right_bp,
                                              &evidence_type);
-
             uint32_t hit = stix_check_sv(q_left_bp,
                                          q_right_bp,
                                          in_left_bp,
@@ -530,6 +724,8 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
         *sv_type = DEL;
     else if (strcmp(sv_type_str, "DUP") == 0)
         *sv_type = DUP;
+    else if (strcmp(sv_type_str, "INV") == 0)
+        *sv_type = INV;
     else
         return 1;
 

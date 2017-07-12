@@ -54,6 +54,258 @@ void test_stix_region_to_breakpoint(void)
 }
 //}}}
 
+void test_stix_check_inv(void)
+{
+    struct stix_breakpoint q_l,
+                           q_r,
+                           i_l,
+                           i_r;
+    uint32_t evidence_type;
+    uint32_t slop = 10;
+
+
+
+    /*
+     *       i_l   i_r
+     *        v     v
+     *     q_l| | | |q_r
+     * ------^ABCDEFG$-----
+     *     +.......+       
+     *       +....+
+     *        -........-
+     *          -....-
+     *     +========-
+     *        -========+
+     *
+     *     +..-   +..- 
+     *       +..-   +..-      
+     *     +==+     +==+
+     * ------^GFEDCBA$-----
+     */
+
+
+
+    q_l.chrm = "1";
+    q_l.start = 100;
+    q_l.end = 101;
+    q_l.strand = -1;
+
+    q_r.chrm = "1";
+    q_r.start = 500;
+    q_r.end = 501;
+    q_r.strand = 1;
+
+
+    // Paired end
+    //PASS
+    /*                100|             |500
+     *           q_l           q_r
+     *             s|----|e      s|----|e
+     *       ------------ABCDEFGHIJKLMNO--------------
+     *                 +..............+
+     *       ------------ONMLKJIHGFEDCBA--------------
+     *                 +..-
+     */
+    i_l.chrm = "1"; i_l.start = 98; i_l.end = 99; i_l.strand = 1;
+    i_r.chrm = "1"; i_r.start = 499; i_r.end = 500; i_r.strand = 1;
+    TEST_ASSERT_EQUAL(1, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(1, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //FAIL
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                  -..............-
+    i_l.chrm = "1"; i_l.start = 98; i_l.end = 99; i_l.strand = -1;
+    i_r.chrm = "1"; i_r.start = 499; i_r.end = 500; i_r.strand = -1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                  +...+
+    i_l.chrm = "1"; i_l.start = 98; i_l.end = 99; i_l.strand = 1;
+    i_r.chrm = "1"; i_r.start = 299; i_r.end = 300; i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //            +....................+
+    i_l.chrm = "1"; i_l.start = 9; i_l.end = 10; i_l.strand = 1;
+    i_r.chrm = "1"; i_r.start = 499; i_r.end = 500; i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                  +....................+
+    i_l.chrm = "1"; i_l.start = 98; i_l.end = 99; i_l.strand = 1;
+    i_r.chrm = "1"; i_r.start = 599; i_r.end = 600; i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //            +..........................+
+    i_l.chrm = "1"; i_l.start = 9; i_l.end = 10; i_l.strand = 1;
+    i_r.chrm = "1"; i_r.start = 599; i_r.end = 600; i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+
+    //PASS
+    /*                100|             |500
+     *                q_l           q_r
+     *                  s|----|e      s|----|e
+     *       ------------ABCDEFGHIJKLMNO--------------
+     *                    -..............-
+     *       ------------ONMLKJIHGFEDCBA--------------
+     *                                +..-
+     */
+    i_l.chrm = "1"; i_l.start = 101; i_l.end = 102; i_l.strand = -1;
+    i_r.chrm = "1"; i_r.start = 501; i_r.end = 502; i_r.strand = -1;
+    TEST_ASSERT_EQUAL(1, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(1, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //FAIL
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                     +..............+
+    i_l.chrm = "1"; i_l.start = 101; i_l.end = 102; i_l.strand = 1;
+    i_r.chrm = "1"; i_r.start = 501; i_r.end = 502; i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                                -...-
+    i_l.chrm = "1"; i_l.start = 301; i_l.end = 302; i_l.strand = -1;
+    i_r.chrm = "1"; i_r.start = 601; i_r.end = 602; i_r.strand = -1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                 -..................-
+    i_l.chrm = "1"; i_l.start = 81; i_l.end = 82; i_l.strand = -1;
+    i_r.chrm = "1"; i_r.start = 501; i_r.end = 502; i_r.strand = -1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                     -.....................-
+    i_l.chrm = "1"; i_l.start = 101; i_l.end = 102; i_l.strand = -1;
+    i_r.chrm = "1"; i_r.start = 601; i_r.end = 602; i_r.strand = -1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+    //        ------------ABCDEFGHIJKLMNO--------------
+    //                 -.........................-
+    i_l.chrm = "1"; i_l.start = 81; i_l.end = 82; i_l.strand = -1;
+    i_r.chrm = "1"; i_r.start = 601; i_r.end = 602; i_r.strand = -1;
+    TEST_ASSERT_EQUAL(0, stix_check_inv(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, INV));
+
+    // Split read
+}
+
+//{{{void test_stix_check_dup(void)
+void test_stix_check_dup(void)
+{
+    struct stix_breakpoint q_l,
+                           q_r,
+                           i_l,
+                           i_r;
+    uint32_t evidence_type;
+    uint32_t slop = 10;
+
+
+
+    /*
+     *       i_l   i_r
+     *        v     v
+     *     q_l|-| |-|q_r
+     * ------^ABCDEFG$-----
+     *          -...+
+     *        -...+
+     *         +==+
+     *
+     *            +..- 
+     *              +..- 
+     *             +==+
+     * ------^ABCDEFGABCDEFG$-----
+     */
+
+    i_l.chrm = "1";
+    i_l.start = 100;
+    i_l.end = 101;
+    i_l.strand = -1;
+
+    i_r.chrm = "1";
+    i_r.start = 500;
+    i_r.end = 501;
+    i_r.strand = 1;
+
+    q_l.chrm = "1";
+    q_l.start = 100;
+    q_l.end = 101;
+    q_l.strand = -1;
+
+    q_r.chrm = "1";
+    q_r.start = 500;
+    q_r.end = 501;
+    q_r.strand = 1;
+
+
+    // Paired end
+    //PASS
+    TEST_ASSERT_EQUAL(1, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(1, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    //FAIL
+    i_l.strand = 1;
+    i_r.strand = -1;
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    i_l.strand = 1;
+    i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    i_l.strand = 1;
+    i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+
+    i_l.start = 10;
+    i_l.end = 11;
+    i_l.strand = -1;
+    i_r.start = 500;
+    i_r.end = 501;
+    i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    i_l.start = 100;
+    i_l.end = 101;
+    i_l.strand = -1;
+    i_r.start = 5000;
+    i_r.end = 5001;
+    i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    i_l.start = 100;
+    i_l.end = 101;
+    i_l.strand = -1;
+    i_r.start = 300;
+    i_r.end = 301;
+    i_r.strand = 1;
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    i_l.start = 200;
+    i_l.end = 201;
+    i_l.strand = -1;
+    i_r.start = 500;
+    i_r.end = 501;
+    i_r.strand = 1;
+
+
+    //split read
+    TEST_ASSERT_EQUAL(0, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 0, slop));
+    TEST_ASSERT_EQUAL(0, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 0, slop, DUP));
+    i_l.start = 100;
+    i_l.end = 101;
+    i_l.strand = 1;
+    i_r.strand = 1;
+    TEST_ASSERT_EQUAL(1, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 1, slop));
+    TEST_ASSERT_EQUAL(1, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 1, slop, DUP));
+    i_l.strand = -1;
+    i_r.strand = -1;
+    TEST_ASSERT_EQUAL(1, stix_check_dup(&q_l, &q_r, &i_l, &i_r, 1, slop));
+    TEST_ASSERT_EQUAL(1, stix_check_sv(&q_l, &q_r, &i_l, &i_r, 1, slop, DUP));
+
+}
+//}}}
+
 //{{{void test_stix_check_del(void)
 void test_stix_check_del(void)
 {
@@ -63,6 +315,20 @@ void test_stix_check_del(void)
                            i_r;
     uint32_t evidence_type;
     uint32_t slop = 100;
+
+
+    /*   
+     *      i_l     i_r
+     *       v       v
+     * q_l | |       | | q_r
+     * ------^ABCDEFG$-----
+     *       +.........- 
+     *     +.........- 
+     *
+     *       +==- 
+     *     +==- 
+     * ------^$-------
+     */
 
     q_l.chrm = "1";
     q_l.start = 100;
@@ -509,7 +775,6 @@ void test_stix_get_quartile_counts(void)
     TEST_ASSERT_EQUAL(11, counts[0]+counts[1]+counts[2]+counts[3]);
 }
 //}}}
-
 
 //{{{void test_stix_get_vcf_breakpoints(void)
 void test_stix_get_vcf_breakpoints(void)
