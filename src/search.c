@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+#include <stdio.h>
 #include <err.h>
 #include <sysexits.h>
 #include <limits.h>
