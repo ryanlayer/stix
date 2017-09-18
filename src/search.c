@@ -18,6 +18,14 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
+uint32_t safe_sub(uint32_t a, uint32_t b)
+{
+    if (a < b)
+        return 0;
+    else
+        return 1;
+}
+
 //{{{struct stix_breakpoint *stix_region_to_breakpoint(char *region)
 struct stix_breakpoint *stix_region_to_breakpoint(char *region)
 {
@@ -204,9 +212,9 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
     */
  
     if ( (in_left_bp->strand == 1) && (in_right_bp->strand == 1) &&//strand
-         (in_left_bp->end >= q_left_bp->start - slop) && // left side
+         (in_left_bp->end >= safe_sub(q_left_bp->start,slop)) && // left side
          (in_left_bp->start < q_left_bp->end ) &&
-         (in_right_bp->end >= q_right_bp->start - slop)  && // right side
+         (in_right_bp->end >= safe_sub(q_right_bp->start,slop))  && // right 
          (in_right_bp->start < q_right_bp->end ) )
         return 1;
 
@@ -354,7 +362,7 @@ uint32_t stix_check_dup(struct stix_breakpoint *q_left_bp,
     if ( (in_left_bp->end +slop >= q_left_bp->start) &&        // l end after start
          (in_left_bp->start < q_left_bp->end) &&  // l start before end
          (in_right_bp->end >= q_right_bp->start) &&        // r end after start
-         (in_right_bp->start - slop < q_right_bp->end) )   // r start before end
+         (safe_sub(in_right_bp->start,slop) < q_right_bp->end) )   // r start before end
         return 1;
     else
         return 0;
@@ -449,12 +457,18 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
      *
      */
 
-    if (sv_type == DEL)
-        q_start -= slop;
-    else if (sv_type == DUP)
+    if (sv_type == DEL) {
+        if (q_start < slop)
+            q_start = 0;
+        else
+            q_start -= slop;
+    } else if (sv_type == DUP) {
         q_end += slop;
-    else if (sv_type == INV) {
-        q_start -= slop;
+    } else if (sv_type == INV) {
+        if (q_start < slop)
+            q_start = 0;
+        else
+            q_start -= slop;
         q_end += slop;
     }
 
