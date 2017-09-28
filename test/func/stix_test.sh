@@ -147,3 +147,25 @@ for S in NA12878 NA12889 NA12890; do
           ) | wc -l ) 
     assert_equal $BT $( cat $STDOUT_FILE | tail -n 1 | awk '{print $4}' )
 done
+
+run summary_query_plain_text \
+    $STIX \
+        -i ../data/low_alt_b \
+        -d ../data/low.ped.db \
+        -t DEL \
+        -s 500 \
+        -l 19:12694867-12694867 \
+        -r 19:12698924-12698924 \
+        -S
+assert_exit_code 0
+HQ=$( $STIX \
+        -i ../data/low_alt_b \
+        -d ../data/low.ped.db \
+        -t DEL \
+        -s 500 \
+        -l 19:12694867-12694867 \
+        -r 19:12698924-12698924 \
+        | head -n 1)
+assert_equal "$HQ" "$(cat $STDOUT_FILE)"
+
+

@@ -28,7 +28,8 @@ void print_results(struct giggle_index *gi,
                    uint32_t num_samples,
                    char **agg_cols,
                    uint32_t num_agg_cols,
-                   uint32_t json_out);
+                   uint32_t json_out,
+                   uint32_t summary_only);
 
 void update_vcf_header(bcf_hdr_t *hdr,
                        uint32_t v_is_set,
@@ -50,7 +51,8 @@ int help(int exit_code)
             "             -f  VCF file\n"
             "             -a  List of columns to aggregate over\n"
             "             -F  Filter samples by PED field query\n"
-            "             -j  JSON output\n");
+            "             -j  JSON output\n"
+            "             -S  Give only summary\n");
     return exit_code;
 }
 //}}}
@@ -66,7 +68,8 @@ void print_results(struct giggle_index *gi,
                    uint32_t num_samples,
                    char **agg_cols,
                    uint32_t num_agg_cols,
-                   uint32_t json_out)
+                   uint32_t json_out,
+                   uint32_t summary_only)
 {
     uint32_t i;
     
@@ -91,7 +94,6 @@ void print_results(struct giggle_index *gi,
         printf("{ \"results\": {\n");
     }
 
-
     if (json_out == 1) {
         printf("\"summary\": [\n");
 
@@ -111,6 +113,13 @@ void print_results(struct giggle_index *gi,
                zero_count, one_count, 
                Q1, Q2, Q3,
                counts[0], counts[1], counts[2], counts[3]);
+    }
+
+    if (summary_only == 1) {
+        if (json_out == 1) {
+            printf("]}}");
+        }
+        return;
     }
 
     sqlite3 *db = NULL;
@@ -333,8 +342,9 @@ int main(int argc, char **argv)
     char *sample_column = NULL;
     uint32_t slop = 0;
     uint32_t col_id = 1;
+    uint32_t summary_only = 0;
 
-    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:jt:v:")) != -1) {
+    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:jt:v:S")) != -1) {
         switch (c) {
             case 'i':
                 i_is_set = 1;
@@ -386,6 +396,9 @@ int main(int argc, char **argv)
             case 'v':
                 v_is_set = 1;
                 sample_column = optarg;
+                break;
+            case 'S':
+                summary_only = 1;
                 break;
             case 'h':
                 return help(EX_OK);
@@ -491,7 +504,8 @@ int main(int argc, char **argv)
                           num_sample_alt_depths,
                           agg_cols,
                           num_agg_cols,
-                          j_is_set);
+                          j_is_set,
+                          summary_only);
 
             free(left->chrm);
             free(left);
