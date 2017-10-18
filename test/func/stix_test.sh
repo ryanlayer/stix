@@ -38,7 +38,8 @@ run make_ped_db_no_col \
     $STIX \
         -i ../data/four_alt_sort_b \
         -p ../data/four.ped \
-        -d ../data/four.ped.db 
+        -d ../data/four.ped.db  \
+        -c 4
 assert_exit_code 1
 
 run make_ped_db \
@@ -72,23 +73,23 @@ assert_equal 70 $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_ZERO=3;" )
 assert_equal 2947 $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_ZERO=4;" )
 assert_equal 0 $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_SAMPLE_DEPTH" )
 
-run query_four \
-    $STIX \
-        -i ../data/four_alt_sort_b \
-        -d ../data/four.ped.db \
-        -s 500 \
-        -f ../data/1kg.four.13.14.vcf.gz \
-        -v Alt_file
-assert_exit_code 0
-assert_equal 3068 $( cat $STDOUT_FILE | grep -c -v "^#" )
-assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_QUANT_DEPTHS )
-assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_QUANTS )
-assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_ZERO )
-assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_ONE )
-assert_equal $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_ZERO=4;" ) \
-             $( cat $STDOUT_FILE | grep -v "^#" | grep -c -v "STIX_SAMPLE_DEPTH" )
-assert_equal $( cat $STDOUT_FILE | grep -v "^#" | grep -c -v "STIX_ZERO=4;" ) \
-             $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_SAMPLE_DEPTH" )
+#run query_four \
+#    $STIX \
+#        -i ../data/four_alt_sort_b \
+#        -d ../data/four.ped.db \
+#        -s 500 \
+#        -f ../data/1kg.four.13.14.vcf.gz \
+#        -v Alt_file
+#assert_exit_code 0
+#assert_equal 3068 $( cat $STDOUT_FILE | grep -c -v "^#" )
+#assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_QUANT_DEPTHS )
+#assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_QUANTS )
+#assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_ZERO )
+#assert_equal 3068 $( cat $STDOUT_FILE | grep -v "^#" | grep -c STIX_ONE )
+#assert_equal $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_ZERO=4;" ) \
+#             $( cat $STDOUT_FILE | grep -v "^#" | grep -c -v "STIX_SAMPLE_DEPTH" )
+#assert_equal $( cat $STDOUT_FILE | grep -v "^#" | grep -c -v "STIX_ZERO=4;" ) \
+#             $( cat $STDOUT_FILE | grep -v "^#" | grep -c "STIX_SAMPLE_DEPTH" )
 
 
 $GIGGLE index \

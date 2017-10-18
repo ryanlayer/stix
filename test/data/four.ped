@@ -1,5 +1,5 @@
-Sample	Sex	Population	Description	Super_Population	Alt_File
-NA12812	1	CEU	CEU Utah Residents (CEPH) with Northern and Western European Ancestry	EUR	NA12812.13.14.bed.gz
-HG00672	2	CHS	Southern Han Chinese	EAS	HG00672.13.14.bed.gz
-NA12878	2	CEU	CEU Utah Residents (CEPH) with Northern and Western European Ancestry	EUR	NA12878.13.14.bed.gz
-HG00674	1	CHS	Southern Han Chinese	EAS	HG00674.13.14.bed.gz
+Sample	Sex	Population	Super_Population	Alt_File
+NA12812	1	CEU	EUR	NA12812.13.14.bed.gz
+HG00672	2	CHS	EAS	HG00672.13.14.bed.gz
+NA12878	2	CEU	EUR	NA12878.13.14.bed.gz
+HG00674	1	CHS	EAS	HG00674.13.14.bed.gz

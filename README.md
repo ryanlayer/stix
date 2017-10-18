@@ -1,17 +1,133 @@
 # STIX
 
+STIX (Structural Variant Index) supports searching every discordant paired-end
+and split-read alignment from thousands of sample BAMs or CRAMs for the
+existence of an arbitrary SV.  STIX reports a per-sample count of all
+concurring evidence. From these counts we can, for example, conclude that an SV
+with high-level evidence in many samples is common and an SV with no evidence
+is rare. 
+
+## Usage
+```
+usage:   stix <options>
+         options:
+             -i  index directory
+             -s  slop
+             -p  PED file
+             -c  Alt file column (default 1)
+             -d  PED database file
+             -r  right SV region
+             -l  left SV region
+             -f  VCF file
+             -a  List of columns to aggregate over
+             -F  Filter samples by PED field query
+             -j  JSON output
+             -S  Give only summary
+```
+
+## Example
+
+The following example is based on four sample BAMs from the 1000 Genomes
+project:
+
+```
+wget https://s3.amazonaws.com/layerlab/stix/example/NA12812.13.14.bam
+wget https://s3.amazonaws.com/layerlab/stix/example/HG00672.13.14.bam
+wget https://s3.amazonaws.com/layerlab/stix/example/NA12878.13.14.bam
+wget https://s3.amazonaws.com/layerlab/stix/example/HG00674.13.14.bam
+```
+
+To create an STIX index, use `excord` to extract discordant paired-end reads and
+split reads.
+```
+mkdir four_alt
+wget -O excord https://github.com/brentp/excord/releases/download/v0.2.2/excord_linux64
+chmod +x excord
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
+
+for sample in NA12812.13.14 HG00672.13.14 NA12878.13.14 HG00674.13.14; do
+    samtools view $sample.bam \
+    | ./excord \
+        --discordantdistance 500 \
+        --fasta hs37d5.fa.gz \
+        /dev/stdin \
+    | LC_ALL=C sort --buffer-size 2G -k1,1 -k2,2n -k3,3n \
+    | bgzip -c > four_alt/$sample.bed.gz
+done
+```
+
+Now index with GIGGLE.
+```
+giggle index -i "four_alt/*gz" -o four_alt_b -s -f
+```
+
+STIX requires a PED file that needs at least sample name and discordant
+alignment file name, but can support an arbitrary number of columns.
+For example:
+
+```
+Sample	Sex	Populationzv    Super_Population	Alt_File
+NA12812	1	CEU	EUR	NA12812.13.14.bed.gz
+HG00672 2	CHS	EAS	HG00672.13.14.bed.gz
+NA12878 2	CEU	EUR	NA12878.13.14.bed.gz
+HG00674 1	CHS	EAS	HG00674.13.14.bed.gz
+```
+
+From a PED file create a database/.
+```
+stix -i four_alt_b -p test/data/four.ped -d four.ped.db -c 5
+```
+
+STIX can query either a single SV or annotate a VCF file. All queries
+require a slop parameter that accounts for the variability in the normal
+fragment size. In most cases use the mean fragments size plus 3 times the
+fragment size standard deviation.
+
+For individual queries, STIX takes the SV type and the left and right positions
+of the SV, where left is (by convention) the lower chromosomal position.  Since
+many SVs do not have base pair resolution, STIX takes a genomic range for each
+side.
+```
+stix -i four_alt_db -d four.ped.db -s 500 -t DEL -l 14:68603030-68603035 -r 14:68603738-68603743
+
+Total   0:1 0:0 7:8:11  0:2:1:1
+Giggle_File_Id  Sample  Sex Population  Super_Population    Alt_File    Pairend Split
+0   HG00672 2   CHS EAS HG00672.13.14.bed.gz    8   0
+1   HG00674 1   CHS EAS HG00674.13.14.bed.gz    7   0
+2   NA12812 1   CEU EUR NA12812.13.14.bed.gz    7   0
+3   NA12878 2   CEU EUR NA12878.13.14.bed.gz    11  0
+```
+
+For a VCF, STIX uses the `INFO/SVTYPE` field for the SV type and the
+`POS`, `INFO/END`, `INFO/CIPOS`, and `INFO/CIEND` fields for the quarry
+positions.  STIX annotates each variant with four fields:
+* `STIX_ZERO` gives the number of samples that have no evidence for the SV 
+* `STIX_ONE` gives the number of samples that have one alignments supporting the SV
+* `STIX_QUANTS` has three values that are the quantiles for the per sample count of alignments supporting the SV
+* `STIX_QUANT_DEPTHS` has four values that give the number of samples with SV an evidence count that is
+  1. between 2 and the quantile one value number of alignments 
+  2. between quantile one to quantile two
+  3. quantile two to quantile three
+  4. more than quantile three
+```
+stix -i four_alt_db -d four.ped.db -s 500 -f 1kg.four.13.14.vcf.gz
+```
+
+
 ## Build
-    git clone https://github.com/ryanlayer/giggle.git
-    cd giggle
-    make
-    cd ..
-    wget http://www.sqlite.org/2017/sqlite-amalgamation-3170000.zip
-    unzip sqlite-amalgamation-3170000.zip
-    git clone https://github.com/ryanlayer/stix.git
-    make
+```
+git clone https://github.com/ryanlayer/giggle.git
+cd giggle
+make
+cd ..
+wget http://www.sqlite.org/2017/sqlite-amalgamation-3170000.zip
+unzip sqlite-amalgamation-3170000.zip
+git clone https://github.com/ryanlayer/stix.git
+cd stix
+make
+```
 
-
-## Examples
+## Sample results
 ### DEL
 
 #### 19:12694867-12698924
