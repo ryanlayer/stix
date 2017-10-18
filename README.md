@@ -1,5 +1,8 @@
 # STIX
 
+![logo](https://raw.githubusercontent.com/ryanlayer/stix/master/doc/img/STIX.2.5in.small.png "logo")
+
+
 STIX (Structural Variant Index) supports searching every discordant paired-end
 and split-read alignment from thousands of sample BAMs or CRAMs for the
 existence of an arbitrary SV.  STIX reports a per-sample count of all
