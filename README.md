@@ -1,5 +1,3 @@
-# STIX
-
 ![logo](https://raw.githubusercontent.com/ryanlayer/stix/master/doc/img/STIX.2.5in.small.png "logo")
 
 
