@@ -32,10 +32,10 @@ The following example is based on four sample BAMs from the 1000 Genomes
 project:
 
 ```
-wget https://s3.amazonaws.com/layerlab/stix/example/NA12812.13.14.bam
-wget https://s3.amazonaws.com/layerlab/stix/example/HG00672.13.14.bam
-wget https://s3.amazonaws.com/layerlab/stix/example/NA12878.13.14.bam
-wget https://s3.amazonaws.com/layerlab/stix/example/HG00674.13.14.bam
+samtools view -b  s3://1000genomes/phase3/data/NA12812/alignment/NA12812.mapped.ILLUMINA.bwa.CEU.low_coverage.20130415.bam 13 14 > NA12812.13.14.bam
+samtools view -b  s3://1000genomes/phase3/data/HG00672/alignment/HG00672.mapped.ILLUMINA.bwa.CHS.low_coverage.20120522.bam 13 14 > HG00672.13.14.bam
+samtools view -b s3://1000genomes/phase3/data/NA12878/alignment/NA12878.mapped.ILLUMINA.bwa.CEU.low_coverage.20121211.bam 13 14 > HG00674.13.14.bam
+samtools view -b s3://1000genomes/phase3/data/HG00674/alignment/HG00674.mapped.ILLUMINA.bwa.CHS.low_coverage.20121211.bam 13 14 > HG00674.13.14.bam
 ```
 
 To create an STIX index, use `excord` to extract discordant paired-end reads and
