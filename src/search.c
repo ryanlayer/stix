@@ -730,11 +730,15 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                               &sv_type_str,
                               &sv_type_len);
 
-    if (ret == -1)
+    if (ret == -1) {
+        fprintf(stderr, "Warning: Skipping variant. No SVTYPE\n");
         return 1;
+    }
 
-    if (sv_type_len < 3)
+    if (sv_type_len < 3) {
+        fprintf(stderr, "Warning: Skipping variant. Unknown SVTYPE: %s\n", sv_type_str);
         return 1;
+    }
 
     if (strcmp(sv_type_str, "DEL") == 0)
         *sv_type = DEL;
@@ -742,8 +746,10 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
         *sv_type = DUP;
     else if (strcmp(sv_type_str, "INV") == 0)
         *sv_type = INV;
-    else
+    else {
+        fprintf(stderr, "Warning: Skipping variant: Unknown SVTYPE: %s\n", sv_type_str);
         return 1;
+    }
 
     const char *chrm = bcf_hdr_id2name(hdr, line->rid);
 
@@ -757,8 +763,25 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                              &end_size);
 
     if (ret == -1) {
-        free(end);
-        return 1;
+        int sv_len_size = sizeof(int);
+        int *sv_len = (int *) malloc(sv_len_size);
+
+        ret = bcf_get_info_int32(hdr,
+                                 line,
+                                 "SVLEN",
+                                 &sv_len,
+                                 &sv_len_size);
+
+        if (ret == -1) {
+            fprintf(stderr, "Warning: Skipping variant. No END and NO SVLEN\n");
+            free(end);
+            free(sv_len);
+            return 1;
+        }
+
+        *end = line->pos + *sv_len;
+
+        free(sv_len);
     }
 
     if (left->chrm != NULL)
@@ -798,6 +821,7 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
     free(end);
     free(ciend);
     free(cipos);
+
     return 0;
 }
 //}}}
