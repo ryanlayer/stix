@@ -47,7 +47,7 @@ chmod +x excord
 wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
 
 for sample in NA12812.13.14 HG00672.13.14 NA12878.13.14 HG00674.13.14; do
-    samtools view $sample.bam \
+    samtools view -b $sample.bam \
     | ./excord \
         --discordantdistance 500 \
         --fasta hs37d5.fa.gz \
