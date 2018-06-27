@@ -106,4 +106,10 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                                   struct stix_breakpoint *left,
                                   struct stix_breakpoint *right,
                                   enum stix_sv_type *sv_type);
+
+uint32_t stix_get_sample_depths(struct uint_pair *sample_alt_depths,
+                                uint32_t *sample_ids,
+                                uint32_t num_samples,
+                                uint32_t **sample_depths);
+
 #endif
