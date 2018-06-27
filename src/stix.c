@@ -29,7 +29,8 @@ void print_results(struct giggle_index *gi,
                    char **agg_cols,
                    uint32_t num_agg_cols,
                    uint32_t json_out,
-                   uint32_t summary_only);
+                   uint32_t summary_only,
+                   uint32_t depths_only);
 
 void update_vcf_header(bcf_hdr_t *hdr,
                        uint32_t v_is_set,
@@ -69,7 +70,8 @@ void print_results(struct giggle_index *gi,
                    char **agg_cols,
                    uint32_t num_agg_cols,
                    uint32_t json_out,
-                   uint32_t summary_only)
+                   uint32_t summary_only,
+                   uint32_t depths_only)
 {
     uint32_t i;
     
@@ -102,8 +104,7 @@ void print_results(struct giggle_index *gi,
                "\"zero_count\":\"%d\", "
                "\"one_count\":\"%d\","
                "\"quantiles\":[\"%u\",\"%u\",\"%u\"], "
-               "\"counts\":[\"%u\",\"%u\",\"%u\",\"%u\"]"
-               "}\n",
+               "\"counts\":[\"%u\",\"%u\",\"%u\",\"%u\"]",
                zero_count,
                one_count,
                Q1, Q2, Q3,
@@ -115,12 +116,30 @@ void print_results(struct giggle_index *gi,
                counts[0], counts[1], counts[2], counts[3]);
     }
 
-    if (summary_only == 1) {
-        if (json_out == 1) {
-            printf("]}}");
+    if (depths_only == 1) {
+        uint32_t *sample_depths = NULL;
+        ret = stix_get_sample_depths(sample_alt_depths,
+                                     NULL,
+                                     num_samples,
+                                     &sample_depths);
+        if (json_out == 0) {
+            for ( i = 0; i < num_samples; ++i)
+                printf("%d ", sample_depths[i]);
+            fprintf(stderr, "\n");
+        } else {
+            printf(",\"depths\":[");
+            for ( i = 0; i < num_samples; ++i) {
+                if (i != 0 )
+                    printf(",");
+                printf("%d", sample_depths[i]);
+            }
+            printf("]");
         }
-        return;
+
+        free(sample_depths);
     }
+    
+    printf("}\n");
 
     sqlite3 *db = NULL;
          
@@ -129,7 +148,6 @@ void print_results(struct giggle_index *gi,
         uint32_t num_uniq_vals;
         uint32_t **uniq_groups_ids;
         uint32_t *uniq_groups_sizes;
-        fprintf(stderr, "filter:%p\n", filter);
         num_uniq_vals = ped_get_uniq_col_groups(ped_db_file_name,
                                                 &db,
                                                 agg_cols,
@@ -170,8 +188,7 @@ void print_results(struct giggle_index *gi,
                        "\"zero_count\":\"%d\", "
                        "\"one_count\":\"%d\","
                        "\"quantiles\":[\"%u\",\"%u\",\"%u\"], "
-                       "\"counts\":[\"%u\",\"%u\",\"%u\",\"%u\"]"
-                       "}\n",
+                       "\"counts\":[\"%u\",\"%u\",\"%u\",\"%u\"]",
                        group_name,
                        zero_count,
                        one_count,
@@ -185,62 +202,95 @@ void print_results(struct giggle_index *gi,
                        counts[0], counts[1], counts[2], counts[3]);
             }
 
+            if (depths_only == 1) {
+                uint32_t *sample_depths = NULL;
+                ret = stix_get_sample_depths(sample_alt_depths,
+                                             uniq_groups_ids[i],
+                                             uniq_groups_sizes[i],
+                                             &sample_depths);
+                int k;
+                if (json_out == 0) {
+                    for ( k = 0; k < uniq_groups_sizes[i]; ++k)
+                        fprintf(stderr, "%d ", sample_depths[k]);
+                    fprintf(stderr, "\n");
+                } else {
+                    printf(",\"depths\":[");
+                    for ( k = 0; k < uniq_groups_sizes[i]; ++k) {
+                        if (k != 0 )
+                            printf(",");
+                        printf("%d", sample_depths[k]);
+                    }
+                    printf("]");
+                }
+                free(sample_depths);
+            }
+
+            printf("}\n");
+
             free(group_name);
         }
     }
 
-    if (json_out)
-        printf("],\n\"samples\": [\n");
-
-         
-
-    char **col_vals = NULL, **col_names = NULL;
-    for ( i = 0; i < num_samples; ++i ) {
-        uint32_t idx;
-        if (sample_ids != NULL)
-            idx = sample_ids[i];
-        else
-            idx = i;
-
-        num_col_vals = ped_get_cols_info_by_id(ped_db_file_name,
-                                               &db,
-                                               NULL,
-                                               0,
-                                               idx,
-                                               &col_vals,
-                                               &col_names);
-
-
-        uint32_t j;
+    if (summary_only == 1) {
         if (json_out == 1) {
-            if (i > 0)
-                printf(",");
+            printf("]}}");
+        }
+        return;
+    }
 
-            printf("{");
-            for ( j = 0; j < num_col_vals; ++j ) {
-                if (j > 0)
+   
+    if (depths_only == 0) {
+        if (json_out)
+            printf("],\n\"samples\": [\n");
+
+        char **col_vals = NULL, **col_names = NULL;
+        for ( i = 0; i < num_samples; ++i ) {
+            uint32_t idx;
+            if (sample_ids != NULL)
+                idx = sample_ids[i];
+            else
+                idx = i;
+
+            num_col_vals = ped_get_cols_info_by_id(ped_db_file_name,
+                                                   &db,
+                                                   NULL,
+                                                   0,
+                                                   idx,
+                                                   &col_vals,
+                                                   &col_names);
+
+            uint32_t j;
+            if (json_out == 1) {
+                if (i > 0)
                     printf(",");
-                printf("\"%s\":\"%s\"", col_names[j], col_vals[j]);
+
+                printf("{");
+                for ( j = 0; j < num_col_vals; ++j ) {
+                    if (j > 0)
+                        printf(",");
+                    printf("\"%s\":\"%s\"", col_names[j], col_vals[j]);
+                }
+                printf(",\"Pairend\":\"%u\",\"Split\":\"%u\"}\n",
+                        sample_alt_depths[i].first,
+                        sample_alt_depths[i].second);
+
+            } else {
+                if (i == 0) {
+                    for ( j = 0; j < num_col_vals; ++j)
+                        printf("%s\t", col_names[j]);
+                    printf("Pairend\tSplit\n");
+                }
+
+                for ( j = 0; j < num_col_vals; ++j )
+                    printf("%s\t", col_vals[j]);
+
+                printf("%u\t%u\n",
+                        sample_alt_depths[i].first,
+                        sample_alt_depths[i].second);
             }
-            printf(",\"Pairend\":\"%u\",\"Split\":\"%u\"}\n",
-                    sample_alt_depths[i].first,
-                    sample_alt_depths[i].second);
-
-        } else {
-            if (i == 0) {
-                for ( j = 0; j < num_col_vals; ++j)
-                    printf("%s\t", col_names[j]);
-                printf("Pairend\tSplit\n");
-            }
-
-            for ( j = 0; j < num_col_vals; ++j )
-                printf("%s\t", col_vals[j]);
-
-            printf("%u\t%u\n",
-                    sample_alt_depths[i].first,
-                    sample_alt_depths[i].second);
         }
     }
+
     if (json_out == 1) 
         printf("]}}");
 
@@ -343,8 +393,9 @@ int main(int argc, char **argv)
     uint32_t slop = 0;
     uint32_t col_id = 1;
     uint32_t summary_only = 0;
+    uint32_t depths_only = 0;
 
-    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:jt:v:S")) != -1) {
+    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:jt:v:SD")) != -1) {
         switch (c) {
             case 'i':
                 i_is_set = 1;
@@ -399,6 +450,9 @@ int main(int argc, char **argv)
                 break;
             case 'S':
                 summary_only = 1;
+                break;
+            case 'D':
+                depths_only = 1;
                 break;
             case 'h':
                 return help(EX_OK);
@@ -505,7 +559,8 @@ int main(int argc, char **argv)
                           agg_cols,
                           num_agg_cols,
                           j_is_set,
-                          summary_only);
+                          summary_only,
+                          depths_only);
 
             free(left->chrm);
             free(left);

@@ -674,7 +674,10 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
 
     uint32_t i, sum, idx;
     for (i = 0; i < num_samples;  ++i) {
-        idx = i;
+        if (sample_ids != NULL)
+            idx = sample_ids[i];
+        else
+            idx = i;
 
         sum = sample_alt_depths[idx].first + sample_alt_depths[idx].second;
         if (sum == 0)
@@ -701,6 +704,29 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
                                             Q3, 
                                             counts);
     free(full);
+    return 0;
+}
+//}}}
+
+//{{{ uint32_t stix_get_sample_depths(struct uint_pair *sample_alt_depths,
+uint32_t stix_get_sample_depths(struct uint_pair *sample_alt_depths,
+                                uint32_t *sample_ids,
+                                uint32_t num_samples,
+                                uint32_t **sample_depths)
+{
+    *sample_depths = (uint32_t *)calloc(num_samples,sizeof(uint32_t));
+
+    uint32_t i, idx;
+    for (i = 0; i < num_samples;  ++i) {
+        if (sample_ids != NULL)
+            idx = sample_ids[i];
+        else
+            idx = i;
+
+        (*sample_depths)[i] = sample_alt_depths[idx].first +
+                              sample_alt_depths[idx].second;
+    }
+
     return 0;
 }
 //}}}
