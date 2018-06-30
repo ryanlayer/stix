@@ -53,7 +53,8 @@ int help(int exit_code)
             "             -a  List of columns to aggregate over\n"
             "             -F  Filter samples by PED field query\n"
             "             -j  JSON output\n"
-            "             -S  Give only summary\n");
+            "             -S  Give only summary\n"
+            "             -D  Give sample depth array\n");
     return exit_code;
 }
 //}}}
@@ -92,9 +93,8 @@ void print_results(struct giggle_index *gi,
                                     &max,
                                     counts);
 
-    if (json_out == 1) {
+    if (json_out == 1) 
         printf("{ \"results\": {\n");
-    }
 
     if (json_out == 1) {
         printf("\"summary\": [\n");
@@ -110,7 +110,7 @@ void print_results(struct giggle_index *gi,
                Q1, Q2, Q3,
                counts[0], counts[1], counts[2], counts[3]);
     } else {
-        printf("Total\t0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d\n",
+        printf("Total\t0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d",
                zero_count, one_count, 
                Q1, Q2, Q3,
                counts[0], counts[1], counts[2], counts[3]);
@@ -123,9 +123,8 @@ void print_results(struct giggle_index *gi,
                                      num_samples,
                                      &sample_depths);
         if (json_out == 0) {
-            for ( i = 0; i < num_samples; ++i)
-                printf("%d ", sample_depths[i]);
-            fprintf(stderr, "\n");
+            for ( i = 0; i < num_samples; ++i) 
+                printf("\t%d", sample_depths[i]);
         } else {
             printf(",\"depths\":[");
             for ( i = 0; i < num_samples; ++i) {
@@ -139,7 +138,9 @@ void print_results(struct giggle_index *gi,
         free(sample_depths);
     }
     
-    printf("}\n");
+    if (json_out == 1) 
+        printf("}");
+    printf("\n");
 
     sqlite3 *db = NULL;
          
@@ -195,7 +196,7 @@ void print_results(struct giggle_index *gi,
                        Q1, Q2, Q3,
                        counts[0], counts[1], counts[2], counts[3]);
             } else  {
-                printf("%s\t0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d\n",
+                printf("%s\t0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d",
                        group_name,
                        zero_count, one_count, 
                        Q1, Q2, Q3,
@@ -211,8 +212,7 @@ void print_results(struct giggle_index *gi,
                 int k;
                 if (json_out == 0) {
                     for ( k = 0; k < uniq_groups_sizes[i]; ++k)
-                        fprintf(stderr, "%d ", sample_depths[k]);
-                    fprintf(stderr, "\n");
+                        printf("\t%d", sample_depths[k]);
                 } else {
                     printf(",\"depths\":[");
                     for ( k = 0; k < uniq_groups_sizes[i]; ++k) {
@@ -225,16 +225,17 @@ void print_results(struct giggle_index *gi,
                 free(sample_depths);
             }
 
-            printf("}\n");
+            if (json_out == 1)
+                printf("}");
+            printf("\n");
 
             free(group_name);
         }
     }
 
     if (summary_only == 1) {
-        if (json_out == 1) {
+        if (json_out == 1) 
             printf("]}}");
-        }
         return;
     }
 
