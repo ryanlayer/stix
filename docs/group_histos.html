@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="http://d3js.org/d3.v4.min.js"></script>
+        <!-- jQuery UI CSS -->
+        <link rel="stylesheet" type="text/css"
+            href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/>
+
+        <!-- Font Awesome CSS -->
+        <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+        <!-- jQuery JS -->
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+
+        <style>
+        </style>
+    </head>
+<body>
+    <select id="sv_type-select">
+        <option value="DEL" selected>Deletion</option>
+        <option value="DUP">Duplication</option>
+        <option value="INS">Insertion</option>
+    </select>
+    Left:<input type="text" id="left_region" value="10:105053143-105053144" size="30">
+    Right:<input type="text" id="right_region" value="10:105054173-105054174" size="30">
+    <input id="submit" name="Submit"  type="submit" onclick="search()" value="Search" >
+    <div id="loading" ></div>
+    <div id="histos" ></div>
+    <script>
+        function getURLParameter(name) {
+              return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+        }
+
+        var server = null;
+        var service = null;
+        var left_chrom = null;
+        var left_start = null;
+        var left_end = null;
+        var right_chrom = null;
+        var right_start = null;
+        var right_end = null;
+        var sv_type = null;
+        var server_result = null;
+
+        $(document).ready(function()
+        {
+            server = getURLParameter('server');
+            service = getURLParameter('service');
+            left_chrom = getURLParameter('left_chrom');
+            left_start = getURLParameter('left_start');
+            left_end = getURLParameter('left_end');
+            right_chrom = getURLParameter('right_chrom');
+            right_start = getURLParameter('right_start');
+            right_end = getURLParameter('right_end');
+            sv_type = getURLParameter('type');
+
+            if ( (left_chrom != null) &&
+                 (left_start != null) &&
+                 (left_end != null) ) {
+                var left = left_chrom + ":" + left_start + "-" + left_end;
+                $("#left_region").val(left);
+
+            }
+
+            if ( (right_chrom != null) &&
+                 (right_start != null) &&
+                 (right_end != null) ) {
+                var right = right_chrom + ":" + right_start + "-" + right_end;
+                $("#right_region").val(right);
+
+            }
+
+            if (sv_type != null) {
+                $("#sv_type-select").val(sv_type).change();
+            }
+
+            if ( (server != null) &&
+                 (service != null) &&
+                 (left_chrom != null) &&
+                 (left_start != null) &&
+                 (left_end != null) &&
+                 (right_chrom != null) &&
+                 (right_start != null) &&
+                 (right_end != null) &&
+                 (sv_type != null) ) {
+                    getData();
+            }
+        });
+
+        function search()
+        {
+            if ((server == null) || (service == null) ) {
+                return 1;
+            }
+
+            server = getURLParameter('server');
+            service = getURLParameter('service');
+
+            var left_region = $("#left_region").val();
+            var right_region = $("#right_region").val();
+
+            left_chrom = left_region.split(":")[0];
+            left_start = left_region.split(":")[1].split("-")[0];
+            left_end = left_region.split(":")[1].split("-")[1];
+
+            right_chrom = right_region.split(":")[0];
+            right_start = right_region.split(":")[1].split("-")[0];
+            right_end = right_region.split(":")[1].split("-")[1];
+
+            sv_type = $("#sv_type-select").val();
+
+            getData();
+        }
+
+        function getData()
+        {
+            $('#histos').empty();
+            $('#loading').append('loading...');
+
+            var params = [ {name : 'service' , value : service},
+                           {name : 'left_chrom', value : left_chrom },
+                           {name : 'left_start', value : left_start },
+                           {name : 'left_end', value : left_end },
+                           {name : 'right_chrom', value : right_chrom },
+                           {name : 'right_start', value : right_start },
+                           {name : 'right_end', value : right_end },
+                           {name : 'type', value : sv_type } ];
+
+            var url_params = $.param( params );
+
+            var get_data_promise = get_data(server + '?' + url_params).then(
+                function(data) {
+                    server_result = data;
+                }
+            );
+
+            Promise.all([get_data_promise]).then(
+                function(values) {
+                    $('#loading').empty();
+                    showData();
+                }
+            );
+        }
+
+        function get_data(url) {
+            return new Promise( function(resolve, reject) {
+                $.get(url, function (data) {
+                    resolve( JSON.parse(data) );
+                });
+            });
+        }
+
+        function showData()
+        {
+            for (var i = 0; i < server_result.result.length; ++i) {
+                var title = server_result.result[i][0];
+                var data = server_result.result[i].slice(5).map(function(item) {
+                       return parseInt(item, 10);
+                });
+
+                var o_height = 200;
+                draw_hist(data, title, o_height);
+            }
+        }
+
+        function draw_hist(data, title, o_height) {
+            var svg = d3.select("div#histos")
+                .append("div")
+                .append("svg")
+                .attr("width",1000)
+                .attr("height",o_height);
+
+            var margin = {top: 20, right: 30, bottom: 50, left: 30},
+                width = 1000 - margin.left - margin.right,
+                height = o_height - margin.top - margin.bottom,
+                g = svg.append("g").attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+            var x = d3.scaleLinear()
+                .domain([0, Math.max(d3.max(data, function(d) { return d; }),50)])
+                .rangeRound([0, width]);
+
+            var bins = d3.histogram()
+                .domain(x.domain())
+                .thresholds(x.ticks(50))
+                (data);
+
+            var y = d3.scaleLinear()
+                .domain([0, Math.log2(d3.max(bins, function(d) { return d.length; }))])
+                .range([height, 0]);
+
+            var bar = g.selectAll(".bar")
+                .data(bins)
+                .enter()
+                .append("g")
+                .attr("class", "bar")
+                .attr("transform", function(d) {
+                    return "translate(" + x(d.x0) + "," + y(Math.log2(1+d.length)) + ")"; });
+
+            bar.append("rect")
+                .attr("x", 1)
+                .attr("width", x( Math.max(bins[0].x1,1) ) - x(bins[0].x0) - 1)
+                .attr("height", function(d) { return height - y(Math.log2(1+d.length)); });
+                    
+            bar.append("text")
+                .attr("y", -1)
+                .attr("x", (x( bins[0].x1,1) - x(bins[0].x0)) / 2)
+                .attr("text-anchor", "middle")
+                .text(function(d) { if (d.length == 0) {return "";} else {return d.length; }});
+
+            g.append("g")
+                .attr("class", "axis axis--x")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+
+            g.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", "translate("+ -5 +","+ (height/2) +")rotate(-90)")
+                .style("font","12px sans-serif")
+                .text("Frequency (log-scale)" );
+
+            g.append("text")
+                .attr("text-anchor", "middle")// this makes it easy to centre the text as the transform is applied to the anchor
+                .attr("transform", "translate("+ (width/2) +","+ 2 +")")// text is drawn off the screen top left, move down and out and rotate
+                .style("font","15px sans-serif")
+                .text("Frequency of Alt Evidence Per Sample in " + title);
+
+            g.append("text")
+                .attr("transform",
+                "translate(" + (width/2) + " ," + (height + margin.top + 25) + ")")
+                .style("text-anchor", "middle")
+                .style("font","12px sans-serif")
+                .text("Sample Alt Evidence");
+
+        }
+    </script>
+</body>
+</html>
