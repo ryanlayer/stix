@@ -23,7 +23,7 @@ uint32_t safe_sub(uint32_t a, uint32_t b)
     if (a < b)
         return 0;
     else
-        return 1;
+        return a - b;
 }
 
 //{{{struct stix_breakpoint *stix_region_to_breakpoint(char *region)
@@ -347,22 +347,40 @@ uint32_t stix_check_dup(struct stix_breakpoint *q_left_bp,
 
     /*
     fprintf(stderr,
+            "(in_left_bp->end + slop >= q_left_bp->start) && "
+            "(in_left_bp->start < q_left_bp->end) && "
             "(in_right_bp->end >= q_right_bp->start) && "
             "(in_right_bp->start - slop < q_right_bp->end)\n"
+
+            "(%u >= %u) && "
+            "(%u < %u) && "
+
             "(%u >= %u) && "
             "(%u - %u < %u)\n",
+
+            in_left_bp->end + slop, q_left_bp->start,
+            in_left_bp->start, q_left_bp->end,
             in_right_bp->end,
             q_right_bp->start,
             in_right_bp->start,
             slop,
             q_right_bp->end);
+
+    fprintf(stderr, 
+            "%d %d %d %d\n",
+            (in_left_bp->end + slop >= q_left_bp->start),
+            (in_left_bp->start < q_left_bp->end),
+            (in_right_bp->end >= q_right_bp->start),
+            (in_right_bp->start - slop < q_right_bp->end));
     */
+ 
 
     // Make sure the left and right sides intersect 
-    if ( (in_left_bp->end +slop >= q_left_bp->start) &&        // l end after start
-         (in_left_bp->start < q_left_bp->end) &&  // l start before end
-         (in_right_bp->end >= q_right_bp->start) &&        // r end after start
-         (safe_sub(in_right_bp->start,slop) < q_right_bp->end) )   // r start before end
+    if ( (in_left_bp->end >= q_left_bp->start) &&        // l end after start
+         (in_left_bp->start < q_left_bp->end + slop) &&  // l start before end
+         (in_right_bp->end >= q_right_bp->start - slop) &&        // r end after start
+         (in_right_bp->start < q_right_bp->end ) )   // r start before end
+         //(safe_sub(in_right_bp->start,slop) < q_right_bp->end) )   // r start before end
         return 1;
     else
         return 0;
