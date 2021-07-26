@@ -568,7 +568,7 @@ void test_ped_get_uniq_col_groups_stix_run_giggle_query(void)
     uint32_t num_rows = ped_create_db(ped_file_name,
                                       ped_file_name_db,
                                       output_path_name,
-                                      6);
+                                      5);
 
 
 
