@@ -61,6 +61,14 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
                         uint32_t evidence_type,
                         uint32_t slop);
 
+uint32_t stix_check_bnd(struct stix_breakpoint *q_left_bp,
+                        struct stix_breakpoint *q_right_bp,
+                        struct stix_breakpoint *in_left_bp,
+                        struct stix_breakpoint *in_right_bp,
+                        uint32_t evidence_type,
+                        uint32_t slop);
+
+
 uint32_t stix_check_dup(struct stix_breakpoint *q_left_bp,
                         struct stix_breakpoint *q_right_bp,
                         struct stix_breakpoint *in_left_bp,
