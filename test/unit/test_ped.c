@@ -159,15 +159,14 @@ void test_ped_get_column_names(void)
                                                     &ped_field_names,
                                                     &ped_field_is_int);
 
-    char *A_ped_field_names[6] = { "Sample",
+    char *A_ped_field_names[5] = { "Sample",
                                    "Sex",
                                    "Population",
-                                   "Description",
                                    "Super_Population",
                                    "Alt_File" };
-    int A_ped_field_is_int[6] = { 0, 1, 0, 0, 0, 0};
+    int A_ped_field_is_int[5] = { 0, 1, 0, 0, 0};
 
-    TEST_ASSERT_EQUAL(6, num_ped_fields);
+    TEST_ASSERT_EQUAL(5, num_ped_fields);
 
     uint32_t i;
     for (i = 0; i < num_ped_fields; ++i) {
@@ -201,7 +200,7 @@ void test_ped_create_db(void)
     uint32_t num_rows = ped_create_db(ped_file_name,
                                       ped_file_name_db,
                                       output_path_name,
-                                      6);
+                                      5);
 
     TEST_ASSERT_EQUAL(4, num_rows);
     remove(ped_file_name_db);
@@ -225,7 +224,7 @@ void test_ped_get_matching_sample_ids(void)
     uint32_t num_rows = ped_create_db(ped_file_name,
                                       ped_file_name_db,
                                       output_path_name,
-                                      6);
+                                      5);
 
     char *select_query_1 = "Sex == 1";
     uint32_t *sample_ids = NULL;
@@ -274,7 +273,7 @@ void test_ped_get_uniq_col_groups(void)
     uint32_t num_rows = ped_create_db(ped_file_name,
                                       ped_file_name_db,
                                       output_path_name,
-                                      6);
+                                      5);
 
     char *cols_2[2] = {"Sex", "Population"};
     char ***uniq_vals;
@@ -457,7 +456,7 @@ void test_ped_get_cols_info_by_id(void)
     uint32_t num_rows = ped_create_db(ped_file_name,
                                       ped_file_name_db,
                                       output_path_name,
-                                      6);
+                                      5);
 
     char *cols[2] = {"Sex", "Population"};
     char **col_vals = NULL, **col_names = NULL;
@@ -526,14 +525,13 @@ void test_ped_get_cols_info_by_id(void)
                                            1,
                                            &col_vals,
                                            &col_names);
-    TEST_ASSERT_EQUAL(7, num_col_vals);
+    TEST_ASSERT_EQUAL(6, num_col_vals);
     TEST_ASSERT_EQUAL(0, strcmp("Giggle_File_Id", col_names[0]));
     TEST_ASSERT_EQUAL(0, strcmp("Sample", col_names[1]));
     TEST_ASSERT_EQUAL(0, strcmp("Sex", col_names[2]));
     TEST_ASSERT_EQUAL(0, strcmp("Population", col_names[3]));
-    TEST_ASSERT_EQUAL(0, strcmp("Description", col_names[4]));
-    TEST_ASSERT_EQUAL(0, strcmp("Super_Population", col_names[5]));
-    TEST_ASSERT_EQUAL(0, strcmp("Alt_File", col_names[6]));
+    TEST_ASSERT_EQUAL(0, strcmp("Super_Population", col_names[4]));
+    TEST_ASSERT_EQUAL(0, strcmp("Alt_File", col_names[5]));
 
     sqlite3_close(db);
     rmrf(output_path_name);
