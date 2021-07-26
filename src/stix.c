@@ -53,6 +53,8 @@ int help(int exit_code)
             "             -a  List of columns to aggregate over\n"
             "             -F  Filter samples by PED field query\n"
             "             -j  JSON output\n"
+            "             -t  SV type \n"
+            "             -v  Add sample depth to VCF file\n"
             "             -S  Give only summary\n"
             "             -D  Give sample depth array\n");
     return exit_code;
@@ -537,6 +539,8 @@ int main(int argc, char **argv)
                 query_type = DUP;
             else if (strcmp(sv_type,"INV") == 0)
                 query_type = INV;
+            else if (strcmp(sv_type,"BND") == 0)
+                query_type = BND;
 
             uint32_t num_sample_alt_depths = 
                     stix_run_giggle_query(&gi,

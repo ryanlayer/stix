@@ -126,7 +126,12 @@ uint32_t stix_check_sv(struct stix_breakpoint *q_left_bp,
             errx(1,"INS not yet supported");
             break;
         case BND:
-            errx(1,"BND not yet supported");
+            return stix_check_bnd(q_left_bp,
+                                  q_right_bp,
+                                  in_left_bp,
+                                  in_right_bp,
+                                  evidence_type,
+                                  slop);
             break;
         default:
             errx(1,"Unknown SV type");
@@ -235,6 +240,65 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
         return 1;
 
     return 0;
+}
+//}}}
+
+//{{{uint32_t stix_check_bnd(struct stix_breakpoint *q_left_bp,
+uint32_t stix_check_bnd(struct stix_breakpoint *q_left_bp,
+                        struct stix_breakpoint *q_right_bp,
+                        struct stix_breakpoint *in_left_bp,
+                        struct stix_breakpoint *in_right_bp,
+                        uint32_t evidence_type,
+                        uint32_t slop)
+{
+    /*
+    // Check strand config +- for paired-end and ++ or -- for split-read
+    if (evidence_type == 0) { // paired-end
+        if ((in_left_bp->strand != 1) || (in_right_bp->strand != -1))
+            return 0;
+    } else { //split read
+        if (in_left_bp->strand != in_right_bp->strand)
+            return 0;
+    }
+    */
+
+    // Ignore "chr" prefix
+    char *q_chrm_test = q_right_bp->chrm;
+    char *in_chrm_test = in_right_bp->chrm;
+
+    if (strncmp("chr", q_chrm_test, 3) == 0)
+        q_chrm_test += 3;
+
+    if (strncmp("chr", in_chrm_test, 3) == 0)
+        in_chrm_test += 3; 
+
+    // Make sure its intra-chhromosomal
+    if (strcmp(q_chrm_test, in_chrm_test) != 0)
+        return 0;
+
+    /*
+     *               q_left_bp    q_right_bp
+     *                              slop
+     *                            |------|
+     *               +------------+
+     *     ----------|            |----------
+     *               +------------+
+     *          +====..............-
+     *
+     *              +..............====-
+     *
+     *                 +====- 
+     *                    +====-
+     *     ----------------|-----------------
+     *
+     */
+
+    // Make sure the right sides intersect 
+    if ( (in_right_bp->end >= q_right_bp->start) &&       // end after start
+         (in_right_bp->start < q_right_bp->end + slop) )  // start before end
+        return 1;
+    else
+        return 0;
 }
 //}}}
 
