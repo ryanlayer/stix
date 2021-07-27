@@ -43,7 +43,7 @@ endif
 	    $(HTS_ROOT)/libhts.a \
 	    $(GIGGLE_ROOT)/lib/libgiggle.a \
 	    $(SQLITE_ROOT)/sqlite3.o \
-	    -lz -lm -lcurl -lcrypto 
+	    -lz -lm -lcurl -lcrypto -ldl
 	#rm $@_Runner.c
 
 test:
