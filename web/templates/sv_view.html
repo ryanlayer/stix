@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+    <head>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="http://d3js.org/d3.v4.min.js"></script>
+        <style>
+            .bar rect {
+                fill: steelblue;
+            }
+
+            .bar text {
+                fill: #000000;
+                font: 10px sans-serif;
+            }
+	    th, td {
+            	padding: 0px 20px 0px 0px;
+            }
+        </style>
+    </head>
+<body>
+{{data.test}}
+    <svg width="500" height="200"></svg>
+    <table>
+    </table>
+    <script>
+        d3.json('http://stix.colorado.edu/stix/?sv_type={{data.sv_type}}&left={{data.left}}&right={{data.right}}&raw', function (data) {
+
+ 	var columns = ['Individual',
+                       'Super_Population',
+                       'Population',
+                       'Sex',
+                       'Alt Evidence']
+
+        var table = d3.select('table')
+        var thead = table.append('thead')
+        var tbody = table.append('tbody')	
+
+        thead.append('tr')
+            .selectAll('th')
+            .data(columns)
+            .enter()
+            .append('th')
+            .text(function (column) { return column; });
+
+        var rows = tbody.selectAll('tr')
+            .data(data.results.samples)
+            .enter()
+            .append('tr');
+
+        var cells = rows.selectAll('td')
+            .data(function (row) {
+                return columns.map(function (column) {
+                    //return {column: column, value: row[column]};
+                    if (column == 'Alt Evidence') {
+                        return {column: column,
+                                value: Number(row['Pairend']) +
+                                       Number(row['Split'])};
+                    } else {
+                        return {column: column, value: row[column]};
+                    }
+                });
+            })
+            .enter()
+            .append('td')
+            .text(function (d) { return d.value; });
+
+        var map = data.results.samples.map( function(i) { 
+            return Number(i.Pairend) + Number(i.Split); })
+
+        var svg = d3.select("svg"),
+            margin = {top: 10, right: 30, bottom: 50, left: 30},
+            width = +svg.attr("width") - margin.left - margin.right,
+            height = +svg.attr("height") - margin.top - margin.bottom,
+            g = svg.append("g").attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+        var x = d3.scaleLinear()
+            .domain([0, d3.max(map, function(d) { return d; })])
+            .rangeRound([0, width]);
+
+        var bins = d3.histogram()
+            .domain(x.domain())
+            .thresholds(x.ticks(20))
+            (map);
+
+        console.log(bins)
+
+        var y = d3.scaleLinear()
+            .domain([0, d3.max(bins, function(d) { return d.length; })])
+            .range([height, 0]);
+
+        var bar = g.selectAll(".bar")
+            .data(bins)
+            .enter()
+            .append("g")
+            .attr("class", "bar")
+            .attr("transform", function(d) {
+                return "translate(" + x(d.x0) + "," + y(d.length) + ")"; });
+
+        bar.append("rect")
+            .attr("x", 1)
+            .attr("width", x(bins[0].x1) - x(bins[0].x0) - 1)
+            .attr("height", function(d) { return height - y(d.length); });
+                
+        bar.append("text")
+            //.attr("dy", ".75em")
+            .attr("y", -1)
+            .attr("x", (x(bins[0].x1) - x(bins[0].x0)) / 2)
+            .attr("text-anchor", "middle")
+            .text(function(d) { return d.length; });
+
+        g.append("g")
+            .attr("class", "axis axis--x")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+        g.append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ -5 +","+ (height/2) +")rotate(-90)")
+            .style("font","12px sans-serif")
+            .text("Frequency" );
+
+ 
+        g.append("text")
+            .attr("text-anchor", "middle")// this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (width/2) +","+ 2 +")")// text is drawn off the screen top left, move down and out and rotate
+            .style("font","12px sans-serif")
+            .text("{{data.left}} {{data.right}} Evidence" );
+
+ 	g.append("text")             
+            .attr("transform",
+            		"translate(" + (width/2) + " ," + 
+                           (height + margin.top + 25) + ")")
+      	    .style("text-anchor", "middle")
+            .text("Sample Alt Evidnce");
+
+
+    })
+    </script>
+</body>
+</html>

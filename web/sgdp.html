@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+    <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-118976594-1"></script>
+    <script>
+  window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+        gtag('config', 'UA-118976594-1');
+    </script>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <!-- jQuery UI CSS -->
+        <link rel="stylesheet" type="text/css"
+            href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/>
+
+        <!-- Font Awesome CSS -->
+        <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
+
+        <!-- jQuery JS -->
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+
+        <style>
+            .bar rect {
+                fill: steelblue;
+            }
+
+            .bar text {
+                fill: #000000;
+                font: 10px sans-serif;
+            }
+            th, td {
+                    padding: 0px 20px 0px 0px;
+                }
+        table {
+               margin-left: 20px; 
+        }
+        /* Zebra striping */
+        tr:nth-of-type(odd) { 
+                background: #eee; 
+        }
+        th { 
+                background: #333; 
+                color: white; 
+                font-weight: bold; 
+                cursor: s-resize;
+                background-repeat: no-repeat;
+                background-position: 3% center;
+        }
+        td, th { 
+                padding: 6px; 
+                border: 1px solid #ccc; 
+                text-align: left; 
+        }
+
+        </style>
+    </head>
+<body>
+    <input id="submit" name="Submit"  type="submit" value="Query" >
+    <select id="sv_type" name"SV Type">
+        <option value="DEL">Deletion (DEL)</option>
+        <option value="DUP">Duplication (DUP)</option>
+        <option value="INV">Inversion (INV)</option>
+        <option value="BND">Break end (BND)</option>
+    </select>
+    <input type="text" id="region" value="10:105053143-105054173" size="50">
+
+    <div id="title" ></div>
+    <div id="histos" ></div>
+    <table>
+    </table>
+    <script>
+        var sub_group = getURLParameter('sub');
+        var url = 'https://stix.colorado.edu/sgdp/'
+        var sv = '10:105053143-105054173';
+
+        d3.select('input#region').attr("value", sv)
+        d3.select('input#sv_type').attr("value", sv_type)
+
+        sv = 'sv_type=' + sv_type + '&region=' + sv;
+
+        var query = url + '?' + sv + '&raw'
+
+        jQuery('#submit').click(function() {
+            var reg = jQuery('#region').val()
+            var sv_type = jQuery('#sv_type').val()
+            sv = url + "?sv_type=" + sv_type + "&region="+ reg + "&raw"
+            d3.json(sv, mydraw)
+            return false
+        })
+
+        function mydraw(data) {
+            var reg = jQuery('#region').val()
+            var sv_type = jQuery('#sv_type').val()
+            console.log(reg)
+
+        var columns = ['Sample_id',
+                       'Population',
+                       'Alt Evidence']
+
+        var table = d3.select('table')
+        table.selectAll("*").remove();
+        var thead = table.append('thead')
+        var tbody = table.append('tbody')
+
+        var sortAscending = true;
+
+        thead.append('tr')
+            .selectAll('th')
+            .data(columns)
+            .enter()
+            .append('th')
+            .text(function (column) { return column; })
+            .on('click', function(d) {
+                sortAscending = !sortAscending;
+                rows.sort(function(a,b) { 
+                    a_d = a[d]
+                    b_d = b[d]
+                    if (d == 'Alt Evidence') {
+                        a_d = Number(a['Pairend']) + Number(a['Split']);
+                        b_d = Number(b['Pairend']) + Number(b['Split']);
+                    }
+
+                    if (sortAscending) {
+                        var tmp = b_d;
+                        b_d = a_d;
+                        a_d = tmp;
+                    }
+                    if (a_d < b_d) return -1;
+                    if (a_d > b_d) return 1;
+                    return 0;
+                }
+            )})
+
+
+        var rows = tbody.selectAll('tr')
+        .data(data.results.samples)
+            .enter()
+            .append('tr')
+            .sort(function(a,b) {
+                    var a_d = Number(a['Pairend']) + Number(a['Split']);
+                    var b_d = Number(b['Pairend']) + Number(b['Split']);
+                    if (b_d < a_d) return -1;
+                    if (b_d > a_d) return 1;
+                    return 0;
+                }
+            );
+
+        var cells = rows.selectAll('td')
+            .data(function (row) {
+                return columns.map(function (column) {
+                    //return {column: column, value: row[column]};
+                    if (column == 'Alt Evidence') {
+                        return {column: column, 
+                                value: Number(row['Pairend']) + 
+                                       Number(row['Split'])};
+                    } else {
+                        return {column: column, value: row[column]};
+                    }
+                });
+            })
+            .enter()
+            .append('td')
+            .text(function (d) { return d.value; });
+
+        d3.select("div#histos").selectAll("*").remove();
+        d3.select("div#title").text(jQuery('#sv_type').val() + " " + jQuery('#region').val())
+        draw_hist(data.results.samples, "Total", 200);
+
+        if (sub_group != null) {
+            var lookup = {};
+            var super_pops = [];
+            for (var item, i = 0; item = data.results.samples[i++];) {
+                if (!(item[sub_group] in lookup)) {
+                    lookup[item[sub_group]] = 1;
+                    super_pops.push(item[sub_group])
+                }
+            }
+
+            for (var item, i = 0; item = super_pops[i++];) {
+                var super_pop = data.results.samples.filter( function(d, i) { 
+                    if (d[sub_group] == item) {return true;}
+                    else {return false;}
+                })
+                draw_hist(super_pop, item, 100);
+            }
+        }
+
+        
+        }
+        d3.json(query, mydraw);
+
+        function draw_hist(data, title, o_height) {
+        // histogram
+        //var map = data.results.samples.map( function(i) { 
+        var map = data.map( function(i) { 
+            return Number(i.Pairend) + Number(i.Split); })
+
+        //var svg = d3.select("svg");
+        var svg = d3.select("div#histos")
+            .append("div")
+            .append("svg")
+            .attr("width",700)
+            .attr("height",o_height);
+        var margin = {top: 10, right: 30, bottom: 50, left: 30},
+            width = 700 - margin.left - margin.right,
+            height = o_height - margin.top - margin.bottom,
+            g = svg.append("g").attr("transform",
+                "translate(" + margin.left + "," + margin.top + ")");
+
+
+        //var x = d3.scaleLinear()
+        var x = d3.scaleLinear()
+            .domain([0, Math.max(d3.max(map, function(d) { return d; }),50)])
+            .rangeRound([0, width]);
+
+        var bins = d3.histogram()
+            .domain(x.domain())
+            .thresholds(x.ticks(50))
+            (map);
+
+        var y = d3.scaleLinear()
+            .domain([0, Math.log2(d3.max(bins, function(d) { return d.length; }))])
+            .range([height, 0]);
+
+        var bar = g.selectAll(".bar")
+            .data(bins)
+            .enter()
+            .append("g")
+            .attr("class", "bar")
+            .attr("transform", function(d) {
+                return "translate(" + x(d.x0) + "," + y(Math.log2(1+d.length)) + ")"; });
+
+        bar.append("rect")
+            .attr("x", 1)
+            .attr("width", x( Math.max(bins[0].x1,1) ) - x(bins[0].x0) - 1)
+            .attr("height", function(d) { return height - y(Math.log2(1+d.length)); });
+                
+        bar.append("text")
+            .attr("y", -1)
+            .attr("x", (x( bins[0].x1,1) - x(bins[0].x0)) / 2)
+            .attr("text-anchor", "middle")
+            .text(function(d) { if (d.length == 0) {return "";} else {return d.length; }});
+
+        g.append("g")
+            .attr("class", "axis axis--x")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+        g.append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ -5 +","+ (height/2) +")rotate(-90)")
+            .style("font","12px sans-serif")
+            .text("Frequency (log-scale)" );
+
+        //g.append("text")
+            //.attr("text-anchor", "middle")// this makes it easy to centre the text as the transform is applied to the anchor
+            //.attr("transform", "translate("+ (width/2) +","+ 2 +")")// text is drawn off the screen top left, move down and out and rotate
+            //.style("font","15px sans-serif")
+            //.text("Frequency of Alt Evidence Per Sample in " + title);
+
+        g.append("text")
+            .attr("transform",
+            "translate(" + (width/2) + " ," + (height + margin.top + 25) + ")")
+            .style("text-anchor", "middle")
+            .style("font","12px sans-serif")
+            .text("Sample Alt Evidence");
+
+        }
+
+        function getURLParameter(name) {
+              return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+        }
+    </script>
+</body>
+</html>
