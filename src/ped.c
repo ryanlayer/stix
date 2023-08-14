@@ -353,6 +353,8 @@ uint32_t ped_create_db(char *ped_file_name,
         // strip out the path info from names
         giggle_names_order[i].str = strdup(basename(names[i]));
     }
+
+    // ### 快排，最后一个是compare的方法，直接返回大小
     qsort(giggle_names_order, 
           num_files,
           sizeof(struct uint32_t_str_pair),

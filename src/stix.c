@@ -247,13 +247,15 @@ void print_results(struct giggle_index *gi,
             printf("],\n\"samples\": [\n");
 
         char **col_vals = NULL, **col_names = NULL;
+        // printf("num_samples:%d\n",num_samples);
         for ( i = 0; i < num_samples; ++i ) {
             uint32_t idx;
             if (sample_ids != NULL)
                 idx = sample_ids[i];
             else
                 idx = i;
-
+           
+            // printf("ped_get_cols_info_by_id:%d \n",idx);
             num_col_vals = ped_get_cols_info_by_id(ped_db_file_name,
                                                    &db,
                                                    NULL,
@@ -541,7 +543,9 @@ int main(int argc, char **argv)
                 query_type = INV;
             else if (strcmp(sv_type,"BND") == 0)
                 query_type = BND;
-
+        
+            //DEBUG
+            // 这里的num_sample_alt_depths是3，所以导致print_results出错
             uint32_t num_sample_alt_depths = 
                     stix_run_giggle_query(&gi,
                                           index_dir_name,
@@ -552,7 +556,8 @@ int main(int argc, char **argv)
                                           sample_ids,
                                           num_samples,
                                           &sample_alt_depths);
-
+            //DEBUG
+            // printf("num_sample_alt_depths:%d\n",num_sample_alt_depths);
             print_results(gi,
                           ped_db_file_name,
                           left,
@@ -652,7 +657,7 @@ int main(int argc, char **argv)
                         for (i = 0; i < num_sample_alt_depths; ++i) {
                             if (sample_alt_depths[i].first + 
                                 sample_alt_depths[i].second > 0) {
-
+                                
                                 char **col_vals = NULL, **col_names = NULL;
                                 num_col_vals = ped_get_cols_info_by_id(
                                         ped_db_file_name,

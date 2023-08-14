@@ -18,6 +18,12 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
+#ifndef ZXCDEBUG
+    #define ZXCDEBUG
+
+#endif
+
+
 uint32_t safe_sub(uint32_t a, uint32_t b)
 {
     if (a < b)
@@ -319,6 +325,9 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
             return 0;
     }
 
+
+
+
     // Ignore "chr" prefix
     char *q_chrm_test = q_right_bp->chrm;
     char *in_chrm_test = in_right_bp->chrm;
@@ -353,7 +362,33 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
     // Make sure the right sides intersect 
     if ( (in_right_bp->end >= q_right_bp->start) &&       // end after start
          (in_right_bp->start < q_right_bp->end + slop) )  // start before end
+        {
+
+        // #ifdef ZXCDEBUG
+        //     fprintf(stderr,
+        //             "debug: "
+        //             "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\n", 
+        //             q_left_bp->chrm, 
+        //             q_left_bp->start,
+        //             q_left_bp->end,
+
+                    
+        //             in_left_bp->chrm, 
+        //             in_left_bp->start,
+        //             in_left_bp->end,
+
+        //             q_right_bp->chrm, 
+        //             q_right_bp->start,
+        //             q_right_bp->end,
+
+        //             in_right_bp->chrm, 
+        //             in_right_bp->start,
+        //             in_right_bp->end
+        //             );
+        // #endif
+
         return 1;
+        }
     else
         return 0;
 }
@@ -463,7 +498,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                struct uint_pair **sample_alt_depths)
 {
 
-#if DEBUG
+
     fprintf(stderr,
             "stix_run_giggle_query: "
             "left:%s %u %u\tright:%s %u %u\n", 
@@ -473,7 +508,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
             q_right_bp->chrm, 
             q_right_bp->start,
             q_right_bp->end);
-#endif
+
 
     if (*gi == NULL) {
         *gi = giggle_load(giggle_index_dir,
@@ -559,10 +594,13 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                                    q_start,
                                                    q_end,
                                                    NULL);
-
+    //DEBUG
+    // printf("gqr->num_files:%d\nnum_samples:%d\n",gqr->num_files,num_samples);
     uint32_t i, N = gqr->num_files;
-    if ((sample_ids != NULL) & (num_samples > 0))
+    if ((sample_ids != NULL) & (num_samples > 0)){
         N = num_samples;
+        // printf("N was modified...");
+    }
 
     if (*sample_alt_depths == NULL)
         *sample_alt_depths =
@@ -589,6 +627,22 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                              &in_left_bp,
                                              &in_right_bp,
                                              &evidence_type);
+
+            // #ifdef ZXCDEBUG
+            //     fprintf(stderr,
+            //             "query result: "
+            //             "left:%s %u %u\tright:%s %u %u\n", 
+            //             in_left_bp->chrm, 
+            //             in_left_bp->start,
+            //             in_left_bp->end,
+            //             in_right_bp->chrm, 
+            //             in_right_bp->start,
+            //             in_right_bp->end);
+            // #endif
+
+
+
+
             uint32_t hit = stix_check_sv(q_left_bp,
                                          q_right_bp,
                                          in_left_bp,
@@ -601,6 +655,31 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                     (*sample_alt_depths)[i].first += 1; //pairend-read
                 else
                     (*sample_alt_depths)[i].second += 1; //split-reads
+                
+
+                        #ifdef ZXCDEBUG
+                            fprintf(stderr,
+                                    "#debug: "
+                                    "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n", 
+                                    q_left_bp->chrm, 
+                                    q_left_bp->start,
+                                    q_left_bp->end,
+
+                                    
+                                    in_left_bp->chrm, 
+                                    in_left_bp->start,
+                                    in_left_bp->end,
+
+                                    q_right_bp->chrm, 
+                                    q_right_bp->start,
+                                    q_right_bp->end,
+
+                                    in_right_bp->chrm, 
+                                    in_right_bp->start,
+                                    in_right_bp->end,
+                                    result
+                                    );
+                        #endif
             }
         }
         giggle_iter_destroy(&gqi);
