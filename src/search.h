@@ -35,6 +35,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                struct stix_breakpoint *q_left_bp,
                                struct stix_breakpoint *q_right_bp,
                                uint32_t slop,
+                               uint32_t ins_padding,
                                uint32_t *sample_ids,
                                uint32_t num_samples,
                                struct uint_pair **sample_alt_depths);
@@ -45,6 +46,7 @@ uint32_t stix_check_sv(struct stix_breakpoint *q_left_bp,
                         struct stix_breakpoint *in_right_bp,
                         uint32_t evidence_type,
                         uint32_t slop,
+                        uint32_t ins_padding,
                         enum stix_sv_type sv_type);
 
 uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
@@ -60,6 +62,15 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
                         struct stix_breakpoint *in_right_bp,
                         uint32_t evidence_type,
                         uint32_t slop);
+
+uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
+                        struct stix_breakpoint *q_right_bp,
+                        struct stix_breakpoint *in_left_bp,
+                        struct stix_breakpoint *in_right_bp,
+                        uint32_t evidence_type,
+                        uint32_t slop,
+                        uint32_t ins_padding
+                        );
 
 uint32_t stix_check_bnd(struct stix_breakpoint *q_left_bp,
                         struct stix_breakpoint *q_right_bp,

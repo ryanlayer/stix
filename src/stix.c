@@ -44,6 +44,7 @@ int help(int exit_code)
             "         options:\n"
             "             -i  index directory\n"
             "             -s  slop\n"
+            "             -P  padding base piars for query insertion(default 5)\n"
             "             -p  PED file\n"
             "             -c  Alt file column (default 1)\n"
             "             -d  PED database file\n"
@@ -383,7 +384,8 @@ int main(int argc, char **argv)
         F_is_set = 0,
         j_is_set = 0,
         t_is_set = 0,
-        v_is_set = 0;
+        v_is_set = 0,
+        P_is_set = 0;
 
     char *index_dir_name = NULL;
     char *ped_file_name= NULL;
@@ -396,11 +398,12 @@ int main(int argc, char **argv)
     char *sv_type = NULL;
     char *sample_column = NULL;
     uint32_t slop = 0;
+    uint32_t ins_padding = 5;
     uint32_t col_id = 1;
     uint32_t summary_only = 0;
     uint32_t depths_only = 0;
 
-    while((c = getopt (argc, argv, "i:s:p:c:d:r:l:f:a:F:jt:v:SD")) != -1) {
+    while((c = getopt (argc, argv, "i:P:s:p:c:d:r:l:f:a:F:jt:v:SD")) != -1) {
         switch (c) {
             case 'i':
                 i_is_set = 1;
@@ -413,6 +416,10 @@ int main(int argc, char **argv)
             case 'p':
                 p_is_set = 1;
                 ped_file_name = optarg;
+                break;
+            case 'P':
+                P_is_set = 1;
+                ins_padding = atoi(optarg);
                 break;
             case 'c':
                 c_is_set = 1;
@@ -465,6 +472,7 @@ int main(int argc, char **argv)
                 if ( (optopt == 'i') ||
                      (optopt == 's') ||
                      (optopt == 'p') ||
+                     (optopt == 'P') ||
                      (optopt == 'd') ||
                      (optopt == 'r') ||
                      (optopt == 'l') ||
@@ -543,6 +551,8 @@ int main(int argc, char **argv)
                 query_type = INV;
             else if (strcmp(sv_type,"BND") == 0)
                 query_type = BND;
+            else if (strcmp(sv_type,"INS") == 0)
+                query_type = INS;
         
             //DEBUG
             // 这里的num_sample_alt_depths是3，所以导致print_results出错
@@ -553,6 +563,7 @@ int main(int argc, char **argv)
                                           left,
                                           right,
                                           slop,
+                                          ins_padding,
                                           sample_ids,
                                           num_samples,
                                           &sample_alt_depths);
@@ -628,6 +639,7 @@ int main(int argc, char **argv)
                                                   left,
                                                   right,
                                                   slop,
+                                                  ins_padding,
                                                   sample_ids,
                                                   num_samples,
                                                   &sample_alt_depths);
