@@ -334,10 +334,13 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
             return 0;
     }
     else
-    { // split read
+    { // ignore the insertion region which the left-end = right-start (0bp region)
         if (in_left_bp->strand != in_right_bp->strand)
             return 0;
     }
+
+    if (in_left_bp->end == in_right_bp->start)
+    return 0;
 
     // Ignore "chr" prefix
     char *q_chrm_test = q_right_bp->chrm;
@@ -425,7 +428,6 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
             return 0;
     }
 
-    // printf("checking INS1...\n");
 
     // Igbnore "chr" prefix
     char *q_chrm_test = q_right_bp->chrm;
@@ -441,7 +443,7 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
     if (strcmp(q_chrm_test, in_chrm_test) != 0)
         return 0;
 
-    // printf("checking INS2...\n");
+
     /*
             reads ---------------|***************|-----------------
             ref   -----------------------|-------------------------
@@ -449,12 +451,11 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                                          |<- zero bp   # step1
                           qleftbp-end->|~~~~|<-- q_rightbp-start   # step2
     */
-    // printf("insertion detected..");
+
     // Make sure the interval is a insertion record.
     if (in_right_bp->start != in_left_bp->end)
         return 0;
 
-    // printf("checking INS3...\n");
     printf("---\n%d,%d\n%d,%d\n", q_left_bp->end, in_right_bp->start, q_right_bp->start, in_right_bp->start);
     // Make sure the insertion located in query region
     if (((q_left_bp->end - ins_padding) < in_right_bp->start) &&  // end after start
