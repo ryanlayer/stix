@@ -339,8 +339,11 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
             return 0;
     }
 
+    // filter out the records that represent for a insertion.
     if (in_left_bp->end == in_right_bp->start)
-    return 0;
+    {
+        return 0;
+    }
 
     // Ignore "chr" prefix
     char *q_chrm_test = q_right_bp->chrm;
@@ -373,37 +376,98 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
      *
      */
 
+    uint32_t left_len = (in_left_bp->end - in_left_bp->start);
+    uint32_t right_len = (in_right_bp->end - in_right_bp->start);
+
+    float min_len = 0;
+    if (left_len < right_len)
+    {
+        min_len = (float)left_len;
+    }
+    else
+    {
+        min_len = (float)right_len;
+    }
+    float ov;
+    if (in_left_bp->start < in_right_bp->start)
+    { // a is head of b
+        if (in_left_bp->end < in_right_bp->start)
+        {
+            // no overlap
+            ov = -1.0;
+#ifdef ZXCDEBUG
+            printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+            fflush(stdout);
+#endif
+            // return 0;
+        }
+        else
+        {
+            if (in_left_bp->end < in_right_bp->end)
+            {
+                // a-------------a
+                //    b---------------b
+                ov = (float)(in_left_bp->end - in_right_bp->start) / min_len;
+            }
+            else
+            {
+                // a---------------------------a
+                //    b---------------b
+                ov = (float)(in_right_bp->end - in_right_bp->start) / min_len;
+            }
+        }
+    }
+    else
+    {
+        // b is head of a
+        if (in_right_bp->end < in_left_bp->start)
+        { // no overlap
+            ov = -1.0;
+#ifdef ZXCDEBUG
+            printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+            fflush(stdout);
+
+#endif
+        }
+        else
+        {
+            if (in_right_bp->end < in_left_bp->end)
+            {
+                //    a-----------------a
+                // b---------------b
+                ov = (float)(in_right_bp->end - in_left_bp->start) / min_len;
+            }
+            else
+            {
+                //    a-----------------a
+                // b---------------------------b
+                ov = (float)(in_left_bp->end - in_left_bp->start) / min_len;
+            }
+        }
+    }
+#ifdef ZXCDEBUG
+    printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+    fflush(stdout);
+#endif
+    if (ov > 0.0)
+    {
+        return 0;
+    }
+    else
+    {
+    }
+
     // Make sure the right sides intersect
     if ((in_right_bp->end >= q_right_bp->start) &&     // end after start
         (in_right_bp->start < q_right_bp->end + slop)) // start before end
     {
 
-        // #ifdef ZXCDEBUG
-        //     fprintf(stderr,
-        //             "debug: "
-        //             "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\n",
-        //             q_left_bp->chrm,
-        //             q_left_bp->start,
-        //             q_left_bp->end,
-
-        //             in_left_bp->chrm,
-        //             in_left_bp->start,
-        //             in_left_bp->end,
-
-        //             q_right_bp->chrm,
-        //             q_right_bp->start,
-        //             q_right_bp->end,
-
-        //             in_right_bp->chrm,
-        //             in_right_bp->start,
-        //             in_right_bp->end
-        //             );
-        // #endif
-
         return 1;
     }
     else
+    {
         return 0;
+    }
 }
 //}}}
 
@@ -414,7 +478,7 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                         struct stix_breakpoint *in_right_bp,
                         uint32_t evidence_type,
                         uint32_t slop,
-                        uint32_t ins_padding )
+                        uint32_t ins_padding)
 {
     // Check strand config +- for paired-end and ++ or -- for split-read
     if (evidence_type == 0)
@@ -427,7 +491,6 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
         if (in_left_bp->strand != in_right_bp->strand)
             return 0;
     }
-
 
     // Igbnore "chr" prefix
     char *q_chrm_test = q_right_bp->chrm;
@@ -443,23 +506,58 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
     if (strcmp(q_chrm_test, in_chrm_test) != 0)
         return 0;
 
-
     /*
             reads ---------------|***************|-----------------
             ref   -----------------------|-------------------------
                     in_left_bp---------->|<-----------in_right_bp--
                                          |<- zero bp   # step1
-                          qleftbp-end->|~~~~|<-- q_rightbp-start   # step2
+                                         ^
+                      qleftbp-end->|~pad~|~pad~|<-- q_rightbp-start   # step2
     */
 
     // Make sure the interval is a insertion record.
     if (in_right_bp->start != in_left_bp->end)
         return 0;
 
-    printf("---\n%d,%d\n%d,%d\n", q_left_bp->end, in_right_bp->start, q_right_bp->start, in_right_bp->start);
+
+
+    float results_len = (float) (in_right_bp->end - in_right_bp->start );
+    float query_len = (float) (q_right_bp->end - q_right_bp->start);
+    float pct = (results_len - query_len)/(results_len+query_len)*2;
+    if (pct < 0.0){
+        pct = -1.0 * pct;
+    }
+#ifdef ZXCDEBUG
+    printf("#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n", 
+    in_right_bp->end, 
+    in_right_bp->start, 
+    (in_right_bp->end - in_right_bp->start ),
+    q_right_bp->end, 
+    q_right_bp->start,
+    (q_right_bp->end - q_right_bp->start),
+    pct
+    );
+    fflush(stdout);
+
+#endif
+
+
+    if (pct < 0.2){
+        return 1;
+    }
+
+
+
+
+
     // Make sure the insertion located in query region
-    if (((q_left_bp->end - ins_padding) < in_right_bp->start) &&  // end after start
-        ((q_right_bp->start + ins_padding) > in_right_bp->start)) // start before end
+    // use the length of right interval as the length of the insertion
+    // encoding length of right interval of query region as the length of insertion
+    // if the results interval located in the query point plus/minus the pad value and if the
+    // length of the query insertion and results insertion is compatible(tolerate some difference)
+    // the result interval will be reported as a true hit.
+    if (((q_right_bp->start - ins_padding) < in_right_bp->start) &&  // end after start
+        ((q_right_bp->start + ins_padding ) > in_right_bp->start)) // start before end
     {
         return 1;
     }
@@ -668,6 +766,19 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
         else
             q_start -= slop;
         q_end += slop;
+    }else if (sv_type == INS){
+        /*
+        expand slop at the left of start point 
+
+        ================^===============
+                        |
+          q_start |---slop----| q_end
+        
+        */ 
+        
+
+        q_start -= (slop/2);
+        q_end += (slop/2);
     }
 
     struct giggle_query_result *gqr = giggle_query(*gi,
@@ -734,6 +845,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                          slop,
                                          ins_padding,
                                          sv_type);
+
             if (hit == 1)
             {
                 if (evidence_type == 0)
@@ -744,6 +856,30 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
 #ifdef ZXCDEBUG
                 fprintf(stderr,
                         "#debug: "
+                        "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n",
+                        q_left_bp->chrm,
+                        q_left_bp->start,
+                        q_left_bp->end,
+
+                        in_left_bp->chrm,
+                        in_left_bp->start,
+                        in_left_bp->end,
+
+                        q_right_bp->chrm,
+                        q_right_bp->start,
+                        q_right_bp->end,
+
+                        in_right_bp->chrm,
+                        in_right_bp->start,
+                        in_right_bp->end,
+                        results2);
+#endif
+            }
+            else
+            {
+#ifdef ZXCDEBUG
+                fprintf(stderr,
+                        "#debug nohits: "
                         "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n",
                         q_left_bp->chrm,
                         q_left_bp->start,

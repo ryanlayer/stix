@@ -44,7 +44,7 @@ int help(int exit_code)
             "         options:\n"
             "             -i  index directory\n"
             "             -s  slop\n"
-            "             -P  padding base piars for query insertion(default 5)\n"
+            "             -P  padding base piars for query insertion(default 50)\n"
             "             -p  PED file\n"
             "             -c  Alt file column (default 1)\n"
             "             -d  PED database file\n"
@@ -398,7 +398,7 @@ int main(int argc, char **argv)
     char *sv_type = NULL;
     char *sample_column = NULL;
     uint32_t slop = 0;
-    uint32_t ins_padding = 5;
+    uint32_t ins_padding = 50;
     uint32_t col_id = 1;
     uint32_t summary_only = 0;
     uint32_t depths_only = 0;
