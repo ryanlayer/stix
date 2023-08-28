@@ -515,10 +515,23 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                       qleftbp-end->|~pad~|~pad~|<-- q_rightbp-start   # step2
     */
 
-    // Make sure the interval is a insertion record.
-    if (in_right_bp->start != in_left_bp->end)
-        return 0;
+    // Make sure the interval is a insertion record: right_interval.start == left_interval.end
 
+    /*      left
+        |--------------|    right
+                       |---------------|
+    */
+
+    if (in_right_bp->start != in_left_bp->end) {
+        return 0;
+    }
+    else {
+        // After making sure that the record is a insrtion, If the Position of insertion in query and results are exactly same
+        // report it as a hit. 
+        if(q_left_bp->end == in_left_bp->start){
+            return 1;
+        }
+    }
 
 
     float results_len = (float) (in_right_bp->end - in_right_bp->start );
