@@ -554,8 +554,7 @@ int main(int argc, char **argv)
             else if (strcmp(sv_type,"INS") == 0)
                 query_type = INS;
         
-            //DEBUG
-            // 这里的num_sample_alt_depths是3，所以导致print_results出错
+            
             uint32_t num_sample_alt_depths = 
                     stix_run_giggle_query(&gi,
                                           index_dir_name,
