@@ -522,60 +522,84 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                        |---------------|
     */
 
-    if (in_right_bp->start != in_left_bp->end) {
-        return 0;
-    }
-    else {
-        // After making sure that the record is a insrtion, If the Position of insertion in query and results are exactly same
-        // report it as a hit. 
-        if(q_left_bp->end == in_left_bp->start){
-            return 1;
-        }
-    }
-
-
-    float results_len = (float) (in_right_bp->end - in_right_bp->start );
-    float query_len = (float) (q_right_bp->end - q_right_bp->start);
-    float pct = (results_len - query_len)/(results_len+query_len)*2;
-    if (pct < 0.0){
-        pct = -1.0 * pct;
-    }
-#ifdef ZXCDEBUG
-    printf("#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n", 
-    in_right_bp->end, 
-    in_right_bp->start, 
-    (in_right_bp->end - in_right_bp->start ),
-    q_right_bp->end, 
-    q_right_bp->start,
-    (q_right_bp->end - q_right_bp->start),
-    pct
-    );
-    fflush(stdout);
-
-#endif
-
-
-    if (pct < 0.2){
-        return 1;
-    }
-
-
-
-
-
-    // Make sure the insertion located in query region
-    // use the length of right interval as the length of the insertion
-    // encoding length of right interval of query region as the length of insertion
-    // if the results interval located in the query point plus/minus the pad value and if the
-    // length of the query insertion and results insertion is compatible(tolerate some difference)
-    // the result interval will be reported as a true hit.
-    if (((q_right_bp->start - ins_padding) < in_right_bp->start) &&  // end after start
-        ((q_right_bp->start + ins_padding ) > in_right_bp->start)) // start before end
+    if (in_right_bp->start != in_left_bp->end)
     {
-        return 1;
+        return 0;
     }
     else
-        return 0;
+    {
+        /*
+        // After making sure that the record is a insertion, If the Position
+        // of insertion in query and results are exactly same
+        // report it as a hit.
+
+            q     |-------------|--------------|
+           r |++++++++++++++++++|++++++++++++++++++|
+        */
+
+        if (q_left_bp->end == in_right_bp->start)
+        {
+            return 1;
+        }
+        else
+        {
+            /*
+                If the results does not match query exactly. Then
+                    If the in_right_bp->start != in_right_bp-> end ==> Length encoded in the in_right_bp
+                        compare the length
+                    Else ==> No length information encoded in the in_right_bp
+                        check if the position of result with in the padding region of query position
+
+            */
+
+            if (in_right_bp->start != in_right_bp->end)
+            {
+
+                // Calucation of relative error of insertion length.
+                float results_len = (float)(in_right_bp->end - in_right_bp->start);
+                float query_len = (float)(q_right_bp->end - q_right_bp->start);
+                float pct = (results_len - query_len) / (results_len + query_len) * 2;
+                if (pct < 0.0)
+                {
+                    pct = -1.0 * pct;
+                }
+#ifdef ZXCDEBUG
+                printf("#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n",
+                       in_right_bp->end,
+                       in_right_bp->start,
+                       (in_right_bp->end - in_right_bp->start),
+                       q_right_bp->end,
+                       q_right_bp->start,
+                       (q_right_bp->end - q_right_bp->start),
+                       pct);
+                fflush(stdout);
+
+#endif
+                // if relative error less than a
+                if (pct < 0.2)
+                {
+                    return 1;
+                }
+            }
+            else
+            {
+
+                // Make sure the insertion located in query region
+                // use the length of right interval as the length of the insertion
+                // encoding length of right interval of query region as the length of insertion
+                // if the results interval located in the query point plus/minus the pad value and if the
+                // length of the query insertion and results insertion is compatible(tolerate some difference)
+                // the result interval will be reported as a true hit.
+                if (((q_right_bp->start - ins_padding) < in_right_bp->start) && // end after start
+                    ((q_right_bp->start + ins_padding) > in_right_bp->start))   // start before end
+                {
+                    return 1;
+                }
+                else
+                    return 0;
+            }
+        }
+    }
 }
 //}}}
 
@@ -779,19 +803,20 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
         else
             q_start -= slop;
         q_end += slop;
-    }else if (sv_type == INS){
+    }
+    else if (sv_type == INS)
+    {
         /*
-        expand slop at the left of start point 
+        expand slop at the left of start point
 
         ================^===============
                         |
           q_start |---slop----| q_end
-        
-        */ 
-        
 
-        q_start -= (slop/2);
-        q_end += (slop/2);
+        */
+
+        q_start -= (slop / 2);
+        q_end += (slop / 2);
     }
 
     struct giggle_query_result *gqr = giggle_query(*gi,
