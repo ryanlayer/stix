@@ -18,10 +18,11 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
-#ifndef ZXCDEBUG
-#define ZXCDEBUG
-
-#endif
+extern int V_is_set;
+extern int L_is_set;
+extern float R_is_set;
+extern int length_of_insertion;
+extern float ovpct_threshold;
 
 uint32_t safe_sub(uint32_t a, uint32_t b)
 {
@@ -184,8 +185,6 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
      * ------^GFEDCBA$-----
      */
 
-
-   
     // fprintf(stderr, "#INV\t %d %d %d %d %d\n",
     // (in_left_bp->strand  + in_right_bp->strand) == 0,
     // in_left_bp->end >= q_left_bp->start - slop,
@@ -203,7 +202,7 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
     { // split read
         if (in_left_bp->strand == in_right_bp->strand)
             return 0;
-        // in split reads, only two coordinate with different strand will go down 
+        // in split reads, only two coordinate with different strand will go down
     }
 
     // Ignore "chr" prefix
@@ -242,12 +241,11 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
     in_right_bp->end >= q_right_bp->start - slop,
     in_right_bp->start < q_right_bp->end);
     */
-    
+
     /*
     This one is only for pair-end reads..
     */
-    
-    
+
     if ((in_left_bp->strand == 1) && (in_right_bp->strand == 1) && // strand
         (in_left_bp->end >= safe_sub(q_left_bp->start, slop)) &&   // left side
         (in_left_bp->start < q_left_bp->end) &&
@@ -273,10 +271,9 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
         (in_left_bp->start < q_left_bp->end + slop) &&
         (in_right_bp->end >= q_right_bp->start) && // right side
         (in_right_bp->start < q_right_bp->end + slop)
-        
-        )
-        return 1;
 
+    )
+        return 1;
 
     /*
     from xinchang:
@@ -284,30 +281,23 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
     In a word, the following code will handel the regions with += and -+ strand
     */
 
-
-
     if ((in_left_bp->strand == 1) && (in_right_bp->strand == -1) && // strand
-        (in_left_bp->end >= safe_sub(q_left_bp->start, slop)) &&   // left side
+        (in_left_bp->end >= safe_sub(q_left_bp->start, slop)) &&    // left side
         (in_left_bp->start < q_left_bp->end) &&
         (in_right_bp->end >= q_right_bp->start) && // right side
         (in_right_bp->start < q_right_bp->end + slop)
-        
-        )
+
+    )
         return 1;
 
-    
     if ((in_left_bp->strand == -1) && (in_right_bp->strand == 1) && // strand
-        (in_left_bp->end >= q_left_bp->start) &&                     // left side
+        (in_left_bp->end >= q_left_bp->start) &&                    // left side
         (in_left_bp->start < q_left_bp->end + slop) &&
         (in_right_bp->end >= safe_sub(q_right_bp->start, slop)) && // right
         (in_right_bp->start < q_right_bp->end)
-        
-        )
+
+    )
         return 1;
-
-
-
-
 
     // if (( (in_left_bp->strand  + in_right_bp->strand) == 0 ) && // strand plus strand == 0; -1 and 1 ; 1 and -1
     // (in_left_bp->end >= q_left_bp->start) &&                     // left side
@@ -316,14 +306,12 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
     // (in_right_bp->start < q_right_bp->end + slop))
     // return 1;
 
-
     // if (((in_left_bp->strand  + in_right_bp->strand) == 0) && // strand
     //     (in_left_bp->end >= q_left_bp->start) &&                     // left side
     //     (in_left_bp->start < q_left_bp->end + slop) &&
     //     (in_right_bp->end >= q_right_bp->start) && // right side
     //     (in_right_bp->start < q_right_bp->end + slop))
     //     return 1;
-   
 
     return 0;
 }
@@ -464,10 +452,11 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
         {
             // no overlap
             ov = -1.0;
-#ifdef ZXCDEBUG
-            printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
-            fflush(stdout);
-#endif
+            if (V_is_set)
+            {
+                printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+                fflush(stdout);
+            }
             // return 0;
         }
         else
@@ -492,11 +481,11 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
         if (in_right_bp->end < in_left_bp->start)
         { // no overlap
             ov = -1.0;
-#ifdef ZXCDEBUG
-            printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
-            fflush(stdout);
-
-#endif
+            if (V_is_set)
+            {
+                printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+                fflush(stdout);
+            }
         }
         else
         {
@@ -514,10 +503,12 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
             }
         }
     }
-#ifdef ZXCDEBUG
-    printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
-    fflush(stdout);
-#endif
+
+    if (V_is_set)
+    {
+        printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+        fflush(stdout);
+    }
     if (ov > 0.0)
     {
         return 0;
@@ -525,6 +516,10 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
     else
     {
     }
+
+    /**
+     * TODO: compare the length of STIX to increase the sensitivity of deletion.
+     */
 
     // Make sure the right sides intersect
     if ((in_right_bp->end >= q_right_bp->start) &&     // end after start
@@ -549,6 +544,7 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                         uint32_t slop,
                         uint32_t ins_padding)
 {
+
     // Check strand config +- for paired-end and ++ or -- for split-read
     if (evidence_type == 0)
     { // paired-end
@@ -608,12 +604,65 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
 
         if (q_left_bp->end == in_right_bp->start)
         {
-            return 1;
+
+            if (V_is_set)
+            {
+                printf("#ins hit:exact match\n");
+                fflush(stdout);
+                printf("#ins debug exact match: \n# in_right_bp->start: %d, q_right_bp->end: %d,\n",
+
+                       in_right_bp->start,
+
+                       q_left_bp->end);
+                fflush(stdout);
+            }
+
+            // further compare length. beacuse multiple insertions exists in same insert point.
+
+            if (in_right_bp->start != in_right_bp->end && q_right_bp->end != q_right_bp->start)
+            { // ** in this case, length information were encoded in right region
+
+                // Calucation of relative error of insertion length.
+                float results_len = (float)(in_right_bp->end - in_right_bp->start);
+                float query_len = 0.0;
+                if (L_is_set)
+                {
+                    query_len = length_of_insertion;
+                }
+                else
+                {
+                    query_len = (float)(q_right_bp->end - q_right_bp->start);
+                }
+                float pct = (results_len - query_len) / (results_len + query_len) * 2;
+                if (pct < 0.0)
+                {
+                    pct = -1.0 * pct;
+                }
+                // if relative error less than a
+                if (pct < ovpct_threshold)
+                {
+
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return 1;
+            }
+
+            // return 1;
         }
         else
         {
             /*
                 If the results does not match query exactly. Then
+
+                    check wether the insertion point of query and result are close.
+
                     If the in_right_bp->start != in_right_bp-> end ==> Length encoded in the in_right_bp
                         compare the length
                     Else ==> No length information encoded in the in_right_bp
@@ -621,8 +670,27 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
 
             */
 
-            if (in_right_bp->start != in_right_bp->end)
+            // ** in this case, check distance of insert points between query and result. **
+
+            int distance = q_left_bp->end - in_left_bp->end;
+            if (distance <= 0)
+                distance = distance * -1;
+            if (distance > slop)
             {
+                if (V_is_set)
+                {
+                    printf("#ins debug: found distance of quey: %d  and results:%d are more than slop %d \n",
+                           q_left_bp->end,
+                           in_left_bp->end,
+                           slop);
+                    fflush(stdout);
+                }
+
+                return 0;
+            }
+
+            if (in_right_bp->start != in_right_bp->end && q_right_bp->end != q_right_bp->start)
+            { // ** in this case, length information were encoded in right region
 
                 // Calucation of relative error of insertion length.
                 float results_len = (float)(in_right_bp->end - in_right_bp->start);
@@ -632,27 +700,36 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                 {
                     pct = -1.0 * pct;
                 }
-#ifdef ZXCDEBUG
-                printf("#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n",
-                       in_right_bp->end,
-                       in_right_bp->start,
-                       (in_right_bp->end - in_right_bp->start),
-                       q_right_bp->end,
-                       q_right_bp->start,
-                       (q_right_bp->end - q_right_bp->start),
-                       pct);
-                fflush(stdout);
-
-#endif
-                // if relative error less than a
-                if (pct < 0.2)
+                if (V_is_set == 1)
                 {
+                    printf("#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n",
+                           in_right_bp->end,
+                           in_right_bp->start,
+                           (in_right_bp->end - in_right_bp->start),
+                           q_right_bp->end,
+                           q_right_bp->start,
+                           (q_right_bp->end - q_right_bp->start),
+                           pct);
+                    fflush(stdout);
+                }
+
+                // if relative error less than a
+                if (pct < ovpct_threshold)
+                {
+
+                    if (V_is_set == 1)
+                    {
+
+                        printf("#ins hit:OV <0.2\n");
+                        fflush(stdout);
+                    }
+
                     return 1;
                 }
             }
             else
             {
-
+                // ** In this case, No length information avaliable. **
                 // Make sure the insertion located in query region
                 // use the length of right interval as the length of the insertion
                 // encoding length of right interval of query region as the length of insertion
@@ -662,6 +739,9 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                 if (((q_right_bp->start - ins_padding) < in_right_bp->start) && // end after start
                     ((q_right_bp->start + ins_padding) > in_right_bp->start))   // start before end
                 {
+
+                    printf("#ins hit: no-length hit\n");
+                    fflush(stdout);
                     return 1;
                 }
                 else
@@ -932,18 +1012,6 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                              &in_right_bp,
                                              &evidence_type);
 
-            // #ifdef ZXCDEBUG
-            //     fprintf(stderr,
-            //             "query result: "
-            //             "left:%s %u %u\tright:%s %u %u\n",
-            //             in_left_bp->chrm,
-            //             in_left_bp->start,
-            //             in_left_bp->end,
-            //             in_right_bp->chrm,
-            //             in_right_bp->start,
-            //             in_right_bp->end);
-            // #endif
-
             uint32_t hit = stix_check_sv(q_left_bp,
                                          q_right_bp,
                                          in_left_bp,
@@ -960,51 +1028,53 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                 else
                     (*sample_alt_depths)[i].second += 1; // split-reads
 
-#ifdef ZXCDEBUG
-                fprintf(stderr,
-                        "#debug: "
-                        "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n",
-                        q_left_bp->chrm,
-                        q_left_bp->start,
-                        q_left_bp->end,
+                if (V_is_set == 1)
+                {
+                    fprintf(stderr,
+                            "#debug: "
+                            "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n",
+                            q_left_bp->chrm,
+                            q_left_bp->start,
+                            q_left_bp->end,
 
-                        in_left_bp->chrm,
-                        in_left_bp->start,
-                        in_left_bp->end,
+                            in_left_bp->chrm,
+                            in_left_bp->start,
+                            in_left_bp->end,
 
-                        q_right_bp->chrm,
-                        q_right_bp->start,
-                        q_right_bp->end,
+                            q_right_bp->chrm,
+                            q_right_bp->start,
+                            q_right_bp->end,
 
-                        in_right_bp->chrm,
-                        in_right_bp->start,
-                        in_right_bp->end,
-                        results2);
-#endif
+                            in_right_bp->chrm,
+                            in_right_bp->start,
+                            in_right_bp->end,
+                            results2);
+                }
             }
             else
             {
-#ifdef ZXCDEBUG
-                fprintf(stderr,
-                        "#debug nohits: "
-                        "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n",
-                        q_left_bp->chrm,
-                        q_left_bp->start,
-                        q_left_bp->end,
+                if (V_is_set == 1)
+                {
+                    fprintf(stderr,
+                            "#debug nohits: "
+                            "query_left:%s %u %u\tresult_left:%s %u %u\tquery_right:%s %u %u\tresult_right:%s %u %u\t%s\n",
+                            q_left_bp->chrm,
+                            q_left_bp->start,
+                            q_left_bp->end,
 
-                        in_left_bp->chrm,
-                        in_left_bp->start,
-                        in_left_bp->end,
+                            in_left_bp->chrm,
+                            in_left_bp->start,
+                            in_left_bp->end,
 
-                        q_right_bp->chrm,
-                        q_right_bp->start,
-                        q_right_bp->end,
+                            q_right_bp->chrm,
+                            q_right_bp->start,
+                            q_right_bp->end,
 
-                        in_right_bp->chrm,
-                        in_right_bp->start,
-                        in_right_bp->end,
-                        results2);
-#endif
+                            in_right_bp->chrm,
+                            in_right_bp->start,
+                            in_right_bp->end,
+                            results2);
+                }
             }
         }
         giggle_iter_destroy(&gqi);
