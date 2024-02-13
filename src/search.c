@@ -740,8 +740,13 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                     ((q_right_bp->start + ins_padding) > in_right_bp->start))   // start before end
                 {
 
-                    printf("#ins hit: no-length hit\n");
-                    fflush(stdout);
+
+                    if (V_is_set == 1)
+                    {
+                        printf("#ins hit: no-length hit\n");
+                        fflush(stdout);
+                    }
+
                     return 1;
                 }
                 else
