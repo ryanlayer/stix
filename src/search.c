@@ -185,13 +185,6 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
      * ------^GFEDCBA$-----
      */
 
-    // fprintf(stderr, "#INV\t %d %d %d %d %d\n",
-    // (in_left_bp->strand  + in_right_bp->strand) == 0,
-    // in_left_bp->end >= q_left_bp->start - slop,
-    // in_left_bp->start < q_left_bp->end,
-    // in_right_bp->end >= q_right_bp->start - slop,
-    // in_right_bp->start < q_right_bp->end);
-
     // Check strand config ++ / -- for paired-end and +- or -+ for split-read
     if (evidence_type == 0)
     { // paired-end
@@ -233,16 +226,6 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
      */
 
     /*
-    fprintf(stderr, "%d %d %d %d %d %d\n",
-    in_left_bp->strand == 1 ,
-    in_right_bp->strand == 1,
-    in_left_bp->end >= q_left_bp->start - slop,
-    in_left_bp->start < q_left_bp->end,
-    in_right_bp->end >= q_right_bp->start - slop,
-    in_right_bp->start < q_right_bp->end);
-    */
-
-    /*
     This one is only for pair-end reads..
     */
 
@@ -278,7 +261,7 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
     /*
     from xinchang:
     Here I am going to add some code for long-read.
-    In a word, the following code will handel the regions with += and -+ strand
+    In a word, the following code will handle the regions with +- and -+ strand
     */
 
     if ((in_left_bp->strand == 1) && (in_right_bp->strand == -1) && // strand
@@ -298,20 +281,6 @@ uint32_t stix_check_inv(struct stix_breakpoint *q_left_bp,
 
     )
         return 1;
-
-    // if (( (in_left_bp->strand  + in_right_bp->strand) == 0 ) && // strand plus strand == 0; -1 and 1 ; 1 and -1
-    // (in_left_bp->end >= q_left_bp->start) &&                     // left side
-    // (in_left_bp->start < q_left_bp->end + slop) &&
-    // (in_right_bp->end >= q_right_bp->start) && // right side
-    // (in_right_bp->start < q_right_bp->end + slop))
-    // return 1;
-
-    // if (((in_left_bp->strand  + in_right_bp->strand) == 0) && // strand
-    //     (in_left_bp->end >= q_left_bp->start) &&                     // left side
-    //     (in_left_bp->start < q_left_bp->end + slop) &&
-    //     (in_right_bp->end >= q_right_bp->start) && // right side
-    //     (in_right_bp->start < q_right_bp->end + slop))
-    //     return 1;
 
     return 0;
 }
