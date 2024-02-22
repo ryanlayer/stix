@@ -1240,7 +1240,7 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
         sum = sample_alt_depths[idx].first + sample_alt_depths[idx].second; 
         if (sum == 0)
             *zero_count = *zero_count + 1;
-        else if (sum == 1) /* What happens if there are more than 1 split reads evidence? */
+        else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
             *one_count = *one_count + 1;
         else
         {
