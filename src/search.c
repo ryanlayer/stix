@@ -58,6 +58,12 @@ uint32_t stix_parse_result(char *result,
                            struct stix_breakpoint **right,
                            uint32_t *evidence_type)
 {
+
+    if (V_is_set ==1){
+        fprintf(stderr,"##stix_parse_result--results: %s\n",result);
+        fflush(stderr);
+    }
+
     if (*left == NULL)
     {
         *left = (struct stix_breakpoint *)
@@ -423,8 +429,8 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
             ov = -1.0;
             if (V_is_set)
             {
-                printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
-                fflush(stdout);
+                fprintf(stderr,"#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+                fflush(stderr);
             }
             // return 0;
         }
@@ -452,8 +458,8 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
             ov = -1.0;
             if (V_is_set)
             {
-                printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
-                fflush(stdout);
+                fprintf(stderr,"#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+                fflush(stderr);
             }
         }
         else
@@ -475,8 +481,8 @@ uint32_t stix_check_del(struct stix_breakpoint *q_left_bp,
 
     if (V_is_set)
     {
-        printf("#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
-        fflush(stdout);
+        fprintf(stderr,"#overlap: ov:%f,min_len:%f, in_left_bp->start: %d, in_right_bp->start: %d, in_left_bp->end: %d, in_right_bp->end: %d\n", ov, min_len, in_left_bp->start, in_right_bp->start, in_left_bp->end, in_right_bp->end);
+        fflush(stderr);
     }
     if (ov > 0.0)
     {
@@ -576,14 +582,14 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
 
             if (V_is_set)
             {
-                printf("#ins hit:exact match\n");
-                fflush(stdout);
-                printf("#ins debug exact match: \n# in_right_bp->start: %d, q_right_bp->end: %d,\n",
+                fprintf(stderr,"#ins hit:exact match\n");
+                fflush(stderr);
+                fprintf(stderr,"#ins debug exact match: \n# in_right_bp->start: %d, q_right_bp->end: %d,\n",
 
                        in_right_bp->start,
 
                        q_left_bp->end);
-                fflush(stdout);
+                fflush(stderr);
             }
 
             // further compare length. beacuse multiple insertions exists in same insert point.
@@ -648,11 +654,11 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
             {
                 if (V_is_set)
                 {
-                    printf("#ins debug: found distance of quey: %d  and results:%d are more than slop %d \n",
+                    fprintf(stderr,"#ins debug: found distance of quey: %d  and results:%d are more than slop %d \n",
                            q_left_bp->end,
                            in_left_bp->end,
                            slop);
-                    fflush(stdout);
+                    fflush(stderr);
                 }
 
                 return 0;
@@ -671,7 +677,7 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                 }
                 if (V_is_set == 1)
                 {
-                    printf("#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n",
+                    fprintf(stderr,"#ins debug: \n#  in_right_bp->end: %d, in_right_bp->start: %d, results_len: %d\n#  q_right_bp->end: %d, q_right_bp->start: %d, query_len: %d  \n#  pct: %f\n",
                            in_right_bp->end,
                            in_right_bp->start,
                            (in_right_bp->end - in_right_bp->start),
@@ -679,7 +685,7 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                            q_right_bp->start,
                            (q_right_bp->end - q_right_bp->start),
                            pct);
-                    fflush(stdout);
+                    fflush(stderr);
                 }
 
                 // if relative error less than a
@@ -689,8 +695,8 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
                     if (V_is_set == 1)
                     {
 
-                        printf("#ins hit:OV <0.2\n");
-                        fflush(stdout);
+                        fprintf(stderr,"#ins hit:OV <0.2\n");
+                        fflush(stderr);
                     }
 
                     return 1;
@@ -712,8 +718,8 @@ uint32_t stix_check_ins(struct stix_breakpoint *q_left_bp,
 
                     if (V_is_set == 1)
                     {
-                        printf("#ins hit: no-length hit\n");
-                        fflush(stdout);
+                        fprintf(stderr,"#ins hit: no-length hit\n");
+                        fflush(stderr);
                     }
 
                     return 1;
@@ -1023,6 +1029,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                             in_right_bp->start,
                             in_right_bp->end,
                             results2);
+                    fflush(stderr);
                 }
             }
             else
@@ -1048,6 +1055,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                             in_right_bp->start,
                             in_right_bp->end,
                             results2);
+                    fflush(stderr);
                 }
             }
         }
@@ -1223,10 +1231,16 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
         else
             idx = i;
 
-        sum = sample_alt_depths[idx].first + sample_alt_depths[idx].second;
+        /*from xinchang
+        sample_alt_depths counts the number of evidence == 0 and number of evidence ==1 which is in the seventh column of excord output
+        evidence == 0 ==> paird reads evidence
+        evidence == 1 ==> split reads evidence
+        if you do a sum of sample_alt_depths, you are counting the number of split reads evidence
+        */
+        sum = sample_alt_depths[idx].first + sample_alt_depths[idx].second; 
         if (sum == 0)
             *zero_count = *zero_count + 1;
-        else if (sum == 1)
+        else if (sum == 1) /* What happens if there are more than 1 split reads evidence? */
             *one_count = *one_count + 1;
         else
         {
@@ -1286,7 +1300,7 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
 {
     char *sv_type_str = NULL;
     int sv_type_len = 0;
-    uint32_t ret;
+    uint32_t ret,ret_svlen;
 
     int size = sizeof(int32_t);
 
@@ -1318,6 +1332,8 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
         *sv_type = DUP;
     else if (strcmp(sv_type_str, "INV") == 0)
         *sv_type = INV;
+    else if (strcmp(sv_type_str, "INS") == 0)
+        *sv_type = INS;
     else
     {
         fprintf(stderr, "Warning: Skipping variant: Unknown SVTYPE: %s\n", sv_type_str);
@@ -1335,18 +1351,24 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                              &end,
                              &end_size);
 
-    if (ret == -1)
+    /* from Xinchang
+        Move SVLEN here, beacuse INS always need this tag
+    */
+    int sv_len_size = sizeof(int);
+    int *sv_len = (int *)malloc(sv_len_size);
+    ret_svlen = bcf_get_info_int32(hdr,
+                            line,
+                            "SVLEN",
+                            &sv_len,
+                            &sv_len_size);
+
+    if (ret == -1) // if END is missing,try to calculate the end from SVLEN tag
     {
-        int sv_len_size = sizeof(int);
-        int *sv_len = (int *)malloc(sv_len_size);
 
-        ret = bcf_get_info_int32(hdr,
-                                 line,
-                                 "SVLEN",
-                                 &sv_len,
-                                 &sv_len_size);
 
-        if (ret == -1)
+
+
+        if (ret_svlen == -1)
         {
             fprintf(stderr, "Warning: Skipping variant. No END and NO SVLEN\n");
             free(end);
@@ -1356,8 +1378,9 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
 
         *end = line->pos + *sv_len;
 
-        free(sv_len);
+        
     }
+
 
     if (left->chrm != NULL)
         free(left->chrm);
@@ -1372,17 +1395,35 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                              &cipos,
                              &ci_size);
 
-    if (ret != -1)
+    if (ret != -1 )
     {
-        left->start += cipos[0];
-        left->end += cipos[1];
+        /*
+        from xinchang:
+        For insertion, we don't need a confident padding 
+        */
+        if (strcmp(sv_type_str, "INS") != 0){
+            left->start += cipos[0];
+            left->end += cipos[1];
+        }
     }
 
     if (right->chrm != NULL)
         free(right->chrm);
-    right->chrm = strdup(chrm);
-    right->start = *end;
-    right->end = *end;
+
+    /*
+    from xinchang,
+    For insertions, The start of right region is equal to the end of left region.
+    Length information is encoded in the end.
+    */
+    if (strcmp(sv_type_str, "INS") != 0){
+        right->chrm = strdup(chrm);
+        right->start = *end;
+        right->end = *end;
+    }else{
+        right->chrm = strdup(chrm);
+        right->start = line->pos;
+        right->end = line->pos + *sv_len; 
+    }
 
     ret = bcf_get_info_int32(hdr,
                              line,
@@ -1391,14 +1432,16 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
                              &ci_size);
     if (ret != -1)
     {
-        right->start += ciend[0];
-        right->end += ciend[1];
+        if (strcmp(sv_type_str, "INS") != 0){
+            right->start += ciend[0];
+            right->end += ciend[1];
+        }
     }
 
     free(end);
     free(ciend);
     free(cipos);
-
+    free(sv_len);
     return 0;
 }
 //}}}
