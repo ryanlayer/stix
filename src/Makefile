@@ -51,4 +51,23 @@ endif
 
 
 testshard:all
-	../bin/stix -B ../test2/shard.tsv	
+	../bin/stix -B ../test2/shard.tsv	-s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL
+
+test:all
+	../bin/stix -B ../test2/shard.tsv	-s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL
+
+testQ:all
+	../bin/stix -B ../test2/shard.tsv -Q ../test2/table.txt	-s 10
+
+testj:all
+	../bin/stix -j -B ../test2/shard.tsv	-s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL
+
+testD:all
+	../bin/stix -D -B ../test2/shard.tsv	-s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL
+
+testa:all
+	../bin/stix -a population,Sex,Alt_File -B ../test2/shard.tsv	-s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL -j
+
+testsingle:all
+	../bin/stix -a population,Sex,Alt_File   -i  ../../test/benchmark2/08.1.healthy_populations/03.1.giggle_idx_00/ -d   ../../test/benchmark2/08.1.healthy_populations/03.1.stix_idx_00.db      -s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL
+

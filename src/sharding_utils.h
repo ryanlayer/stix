@@ -12,22 +12,23 @@
 typedef struct shard {
     char* giggle_path;
     char* stixdb_path;
-    char* bed_path;
+    // char* bed_path;
 
 } Shard;
 
-Shard* read_shards_from_file(const char *filename);
+Shard* read_shards_from_file(const char *filename, int *shard_len);
 
 
-// uint32_t stix_run_giggle_query_sharding(Shard* sharding_array,
-//                                enum stix_sv_type sv_type,
-//                                struct stix_breakpoint *q_left_bp,
-//                                struct stix_breakpoint *q_right_bp,
-//                                uint32_t slop,
-//                                uint32_t ins_padding,
-//                                uint32_t *sample_ids,
-//                                uint32_t num_samples,
-//                                struct uint_pair **sample_alt_depths);
+typedef struct tablequery {
+    char* left_str;
+    char* right_str;
+    char* len;
+    char* svtype;
+    char* ID;
+    // char* bed_path;
 
+} TableQuery;
+
+TableQuery* read_table_queries_from_file(const char *filename, int *table_len);
 
 #endif
