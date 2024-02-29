@@ -1365,9 +1365,6 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
     if (ret == -1) // if END is missing,try to calculate the end from SVLEN tag
     {
 
-
-
-
         if (ret_svlen == -1)
         {
             fprintf(stderr, "Warning: Skipping variant. No END and NO SVLEN\n");

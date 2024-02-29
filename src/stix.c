@@ -12,6 +12,7 @@
 
 #include "ped.h"
 #include "search.h"
+#include "sharding_utils.h"
 
 char *stix_sv_type_strings[5] = {"DEL", "DUP", "INS", "INV", "BND"};
 
@@ -46,6 +47,7 @@ int help(int exit_code)
             "             -s  slop\n"
             "             -P  padding base piars for query insertion(default 50)\n"
             "             -p  PED file\n"
+            "             -B  Sharding file\n"
             "             -c  Alt file column (default 1)\n"
             "             -d  PED database file\n"
             "             -r  right SV region\n"
@@ -422,7 +424,8 @@ int main(int argc, char **argv)
         j_is_set = 0,
         t_is_set = 0,
         v_is_set = 0,
-        P_is_set = 0;
+        P_is_set = 0,
+        B_is_set = 0;
 
     char *index_dir_name = NULL;
     char *ped_file_name = NULL;
@@ -434,6 +437,7 @@ int main(int argc, char **argv)
     char *filter = NULL;
     char *sv_type = NULL;
     char *sample_column = NULL;
+    char *sharding_file_name = NULL;
 
     uint32_t slop = 0;
     uint32_t ins_padding = 50;
@@ -441,7 +445,7 @@ int main(int argc, char **argv)
     uint32_t summary_only = 0;
     uint32_t depths_only = 0;
 
-    while ((c = getopt(argc, argv, "i:P:s:p:c:d:r:l:f:a:F:jt:v:SDVL:R:")) != -1)
+    while ((c = getopt(argc, argv, "i:P:s:B:p:c:d:r:l:f:a:F:jt:v:SDVL:R:")) != -1)
     {
         switch (c)
         {
@@ -452,6 +456,10 @@ int main(int argc, char **argv)
         case 's':
             s_is_set = 1;
             slop = atoi(optarg);
+            break;
+        case 'B':
+            B_is_set = 1;
+            sharding_file_name = optarg;
             break;
         case 'p':
             p_is_set = 1;
@@ -522,6 +530,7 @@ int main(int argc, char **argv)
         case '?':
             if ((optopt == 'i') ||
                 (optopt == 's') ||
+                (optopt == 'B') ||
                 (optopt == 'p') ||
                 (optopt == 'P') ||
                 (optopt == 'd') ||
@@ -551,6 +560,17 @@ int main(int argc, char **argv)
             return help(EX_OK);
         }
     }
+
+
+
+    /*ZXCDEBUG*/
+
+    if(B_is_set){
+        Shard * sharding_arr = read_shards_from_file(sharding_file_name);
+        fprintf(stderr,"sharding:%s,%s,%s",sharding_arr[1].giggle_path,sharding_arr[1].stixdb_path,sharding_arr[1].bed_path);
+    }
+    
+
 
     char **agg_cols = NULL;
     uint32_t num_agg_cols = 0;
@@ -591,6 +611,7 @@ int main(int argc, char **argv)
         struct uint_pair *sample_alt_depths = NULL;
         struct stix_breakpoint *left = NULL, *right = NULL;
 
+        /*Single query mode*/
         if ((l_is_set == 1) && // left interval
             (r_is_set == 1) && // right interval
             (t_is_set == 1))
@@ -642,7 +663,7 @@ int main(int argc, char **argv)
             free(right->chrm);
             free(right);
         }
-        else if (f_is_set == 1)
+        else if (f_is_set == 1) /*VCF input mode*/
         {
 
             htsFile *fp = hts_open(vcf_file_name, "r");

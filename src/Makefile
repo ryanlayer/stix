@@ -11,7 +11,8 @@ SQLITE_ROOT=../../sqlite-amalgamation-3170000
 CC=gcc
 
 LIB=ped.o \
-    search.o
+    search.o \
+	sharding_utils.o
 
 .SUFFIXES:
 
@@ -47,3 +48,7 @@ ifdef TRAVIS_BUILD_DIR
 HTS_ROOT=$(TRAVIS_BUILD_DIR)/htslib
 GIGGLE_ROOT=$(TRAVIS_BUILD_DIR)/giggle
 endif
+
+
+testshard:all
+	../bin/stix -B ../test2/shard.tsv	
