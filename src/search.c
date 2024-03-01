@@ -20,9 +20,12 @@
 
 extern int V_is_set;
 extern int L_is_set;
+extern int T_is_set;
 extern float R_is_set;
 extern int length_of_insertion;
 extern float ovpct_threshold;
+extern uint32_t min_supporting_reads;
+
 
 uint32_t safe_sub(uint32_t a, uint32_t b)
 {
@@ -1241,9 +1244,11 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
         if you do a sum of sample_alt_depths, you are counting the number of split reads evidence
         */
         sum = sample_alt_depths[idx].first + sample_alt_depths[idx].second; 
-        if (sum == 0)
+        // if (sum == 0)
+        if (sum < min_supporting_reads)
             *zero_count = *zero_count + 1;
-        else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+        // else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+        else if (sum >= min_supporting_reads) /* What happens if there are more than 1 split reads evidence? */
             *one_count = *one_count + 1;
         else
         {
@@ -1320,9 +1325,15 @@ uint32_t stix_get_summary_shard(struct uint_pair *sample_alt_depths_all[],
             if you do a sum of sample_alt_depths, you are counting the number of split reads evidence
             */
             sum = sample_alt_depths_all[num_sample_idx][idx].first + sample_alt_depths_all[num_sample_idx][idx].second;
-            if (sum == 0)
+            // if (sum == 0)
+            //     *zero_count = *zero_count + 1;
+            // else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+
+
+            if (sum < min_supporting_reads)
                 *zero_count = *zero_count + 1;
-            else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+            // else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+            else if (sum >= min_supporting_reads) /* What happens if there are more than 1 split reads evidence? */
                 *one_count = *one_count + 1;
             else
             {

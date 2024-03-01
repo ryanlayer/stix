@@ -48,7 +48,8 @@ int help(int exit_code)
             "             -P  padding base piars for query insertion(default 50)\n"
             "             -p  PED file\n"
             "             -B  Sharding file\n"
-            "             -Q  Batch queries in table format(left\\tright\\tlen\\tSVtype\\tID) \n"
+            "             -Q  Batch queries in table format(left \\t right \\t len \\t SVtype \\t ID) \n"
+            "             -T  Threshold to define STIX_ONE(How many supporting reads define a hit) (default:1) \n"
             "             -c  Alt file column (default 1)\n"
             "             -d  PED database file\n"
             "             -r  right SV region\n"
@@ -367,8 +368,8 @@ void print_results_shard(
     int32_t counts[4];
     // uint32_t size_num_samples_all =  sizeof(num_samples_all) / sizeof(num_samples_all[0]);
 
-
-        
+    // if(V_is_set ==1)
+    //     fprintf(stderr,"<<<<<<<<<<num_samples_all[0]:%d\tnum_samples_all[1]:%d,",num_samples_all[0],num_samples_all[1]);
     uint32_t ret = stix_get_summary_shard(sample_alt_depths_all,
                                     sample_ids_all,
                                     num_samples_all,
@@ -696,6 +697,13 @@ void update_vcf_header(bcf_hdr_t *hdr,
     if (bcf_hdr_append(hdr, STIX_ONE_LINE) != 0)
         errx(EX_DATAERR, "Error updating header\n");
 
+    char *MIN_SUP_READS_LINE =
+        "##INFO=<ID=STIX_ONE_MIN_READS,Number=1,Type=Integer,"
+        "Description=\"STIX How many supporting reads define a hit,Used for calucation of STIX_ONE and STIX_ZERO.\">";
+    if (bcf_hdr_append(hdr, MIN_SUP_READS_LINE) != 0)
+        errx(EX_DATAERR, "Error updating header\n");
+
+
     if (v_is_set == 1)
     {
         char *STIX_SAMPLE_DEPTH_LINE =
@@ -710,8 +718,10 @@ void update_vcf_header(bcf_hdr_t *hdr,
 int V_is_set = 0; // init global Verbose mode
 int L_is_set = 0; // init global Length of Insertions
 int R_is_set = 0;
+int T_is_set = 0;
 uint32_t length_of_insertion = 0;
 float ovpct_threshold = 0.15;
+uint32_t min_supporting_reads = 1;
 
 //{{{int main(int argc, char **argv)
 int main(int argc, char **argv)
@@ -752,8 +762,10 @@ int main(int argc, char **argv)
     uint32_t col_id = 1;
     uint32_t summary_only = 0;
     uint32_t depths_only = 0;
+    
 
-    while ((c = getopt(argc, argv, "i:P:s:B:Q:p:c:d:r:l:f:a:F:jt:v:SDVL:R:")) != -1)
+
+    while ((c = getopt(argc, argv, "i:P:s:T:B:Q:p:c:d:r:l:f:a:F:jt:v:SDVL:R:")) != -1)
     {
         switch (c)
         {
@@ -780,6 +792,10 @@ int main(int argc, char **argv)
         case 'P':
             P_is_set = 1;
             ins_padding = atoi(optarg);
+            break;
+        case 'T':
+            T_is_set = 1;
+            min_supporting_reads = atoi(optarg);
             break;
         case 'c':
             c_is_set = 1;
@@ -843,6 +859,8 @@ int main(int argc, char **argv)
             if ((optopt == 'i') ||
                 (optopt == 's') ||
                 (optopt == 'B') ||
+                (optopt == 'Q') ||
+                (optopt == 'T') ||
                 (optopt == 'p') ||
                 (optopt == 'P') ||
                 (optopt == 'd') ||
@@ -973,7 +991,7 @@ int main(int argc, char **argv)
             }
             else if (f_is_set == 1) /*VCF input mode*/
             {
-
+                
                 htsFile *fp = hts_open(vcf_file_name, "r");
                 if (!fp)
                     err(EX_DATAERR, "Could not read file: %s", vcf_file_name);
@@ -1325,7 +1343,7 @@ int main(int argc, char **argv)
 
             for (int table_q_idx = 0; table_q_idx < table_query_length; table_q_idx++)
             {
-                fprintf(stdout,">>>%s\t%s\t%s\t%s\t%s", table_query_arr[table_q_idx].left_str,
+                fprintf(stdout,">>>%s\t%s\t%s\t%s\t%s\n", table_query_arr[table_q_idx].left_str,
                        table_query_arr[table_q_idx].right_str,
                        table_query_arr[table_q_idx].len,
                        table_query_arr[table_q_idx].svtype,
@@ -1389,6 +1407,12 @@ int main(int argc, char **argv)
                     num_sample_alt_depths_all[i] = num_sample_alt_depths;
                     sample_alt_depths_all[i] = sample_alt_depths;
                     num_samples_all[i] = num_samples;
+
+                    if (gi != NULL)
+                    {
+                        giggle_index_destroy(&gi);
+                        cache.destroy();
+                    }
                 }
 
                 uint32_t size_num_sample_alt_depths_all = sizeof(num_sample_alt_depths_all) / sizeof(num_sample_alt_depths_all[0]);
@@ -1413,13 +1437,337 @@ int main(int argc, char **argv)
                 free(left);
                 free(right->chrm);
                 free(right);
+
+
             }
         }
         else if (f_is_set == 1) /*VCF input mode*/
         {
             
+            htsFile *fp = hts_open(vcf_file_name, "r");
+            if (!fp)
+                err(EX_DATAERR, "Could not read file: %s", vcf_file_name);
+
+            bcf_hdr_t *hdr = bcf_hdr_read(fp);
+            if (!hdr)
+                errx(EX_DATAERR, "Header not found: %s\n", vcf_file_name);
+
+            update_vcf_header(hdr, v_is_set, sample_column);
+
+            htsFile *out_f = hts_open("-", "w");
+            bcf_hdr_write(out_f, hdr);
+
+            bcf1_t *line = bcf_init1();
+
+            enum stix_sv_type query_type;
+
+            /*----------*/
+            struct giggle_index *gi_all[sharding_arr_length];
+            for (int i = 0; i < sharding_arr_length; ++i)
+            {
+                gi_all[i] = NULL;
+            }
+            int Iter_number = 0;
+            const int max_iter = 4;
+            while (bcf_read(fp, hdr, line) == 0)
+            {
+                Iter_number++;
+                struct stix_breakpoint *left = NULL, *right = NULL;
+                left = (struct stix_breakpoint *)
+                    malloc(sizeof(struct stix_breakpoint));
+                left->chrm = NULL;
+
+                right = (struct stix_breakpoint *)
+                    malloc(sizeof(struct stix_breakpoint));
+                right->chrm = NULL;
+
+                if (stix_get_vcf_breakpoints(fp,
+                                             hdr,
+                                             line,
+                                             left,
+                                             right,
+                                             &query_type) == 0)
+                {
+
+                    uint32_t *sample_ids_all[sharding_arr_length];
+                    uint32_t num_samples_all[sharding_arr_length];
+                    uint32_t num_sample_alt_depths_all[sharding_arr_length];
+                    struct uint_pair *sample_alt_depths_all[sharding_arr_length];
+
+                    for (int i = 0; i < sharding_arr_length; i++)
+                    {
+
+                        char *ped_db_file_name_shard = sharding_arr[i].stixdb_path;
+                        char *index_dir_name_shard = sharding_arr[i].giggle_path;
+
+                        uint32_t num_samples = 0;
+                        uint32_t *sample_ids = NULL;
+
+                        struct giggle_index *gi = NULL;
+                        // fprintf(stderr,"@@@@@@@@@@@@@%p\n",gi_all[i]);
+                        // if (gi_all[i] != NULL)
+                        // {
+                        //     gi = gi_all[i];
+                        // }
+                        // struct giggle_index *gi =NULL;
+                        // struct giggle_index *gi = NULL;
+                        struct uint_pair *sample_alt_depths = NULL;
+
+                        // if (F_is_set == 1)
+                        //     num_samples = ped_get_matching_sample_ids(ped_db_file_name_shard,
+                        //                                               filter,
+                        //                                               &sample_ids);
+                        // fprintf(stderr,">>>>>>>>>>%p\n",gi);
+                        uint32_t num_sample_alt_depths =
+                            stix_run_giggle_query(&gi,
+                                                  index_dir_name_shard,
+                                                  query_type,
+                                                  left,
+                                                  right,
+                                                  slop,
+                                                  ins_padding,
+                                                  sample_ids,
+                                                  num_samples,
+                                                  &sample_alt_depths,
+                                                  i);
+                        sample_ids_all[i] = sample_ids;
+                        num_sample_alt_depths_all[i] = num_sample_alt_depths;
+                        sample_alt_depths_all[i] = sample_alt_depths;
+                        num_samples_all[i] = num_samples;
+                        // if (gi_all[i] != NULL)
+                        //     gi_all[i] = gi;
+
+
+                       
+                        if (gi_all[i] == NULL)
+                        {
+                            // fprintf(stderr,"<<<<<<<<<%p,%p\n",gi,gi_all[i]);
+                            gi_all[i] = gi;
+                        }
+
+                        if (gi != NULL)
+                        {
+                            giggle_index_destroy(&gi);
+                            cache.destroy();
+                        }
+                    }
+
+                    /*from xinchang
+                    不知道catch怎么来的，无法批量删除。所以每次调用都要销毁giggle index，damn!
+                    */
+                    // for (int i = 0; i < sharding_arr_length; ++i)
+                    // {
+                    //     giggle_index_destroy(&gi_all[i]);
+                    //     cache.destroy();
+                    // }
+
+                    // uint32_t i;
+                    // uint32_t num_col_vals;
+                    int32_t zero_count, one_count;
+                    uint32_t Q1, Q2, Q3, min, max;
+                    int32_t counts[4];
+                    // uint32_t size_num_samples_all = sizeof(num_samples_all) / sizeof(num_samples_all[0]);
+                    uint32_t size_num_sample_alt_depths_all = sizeof(num_sample_alt_depths_all) / sizeof(num_sample_alt_depths_all[0]);
+                    // if(V_is_set)
+                    //     fprintf(stderr,">>>>>>>>>>num_samples_all[0]:%d\tnum_samples_all[1]:%d,",num_sample_alt_depths_all[0],num_sample_alt_depths_all[1]);
+                    uint32_t ret = stix_get_summary_shard(sample_alt_depths_all,
+                                                          sample_ids_all,
+                                                          num_sample_alt_depths_all,
+                                                          size_num_sample_alt_depths_all,
+                                                          &zero_count,
+                                                          &one_count,
+                                                          &Q1,
+                                                          &Q2,
+                                                          &Q3,
+                                                          &min,
+                                                          &max,
+                                                          counts);
+
+                    /*----------------------------------------
+
+                    if (v_is_set == 1)
+                    {
+                        
+                        // fprintf(stderr,">>>>>>>>>>>");
+                        uint32_t num_cols = 0;
+                        char **cols = NULL;
+                        cols = (char **)malloc(sizeof(char *));
+                        cols[0] = sample_column;
+                        num_cols = 1;
+                        char *stix_sample_depth_string = NULL;
+                        
+                        for (int shard_idx = 0; shard_idx < sharding_arr_length; shard_idx++)
+                        {
+                            
+                            
+                            char *tmp_string = stix_sample_depth_string;
+                            uint32_t num_sample_alt_depths = num_sample_alt_depths_all[shard_idx];
+                            struct uint_pair *sample_alt_depths = sample_alt_depths_all[shard_idx];
+                            // fprintf(stderr,"num_sample:%d\n",num_sample_alt_depths);
+                            for (uint32_t i = 0; i < num_sample_alt_depths; ++i)
+                            {
+
+                                fprintf(stderr,"sample_alt_depths:%d,%d\n",sample_alt_depths[i].first,sample_alt_depths[i].second);
+                                if (sample_alt_depths[i].first +
+                                        sample_alt_depths[i].second >
+                                    0)
+                                {
+                                    fprintf(stderr,"22ddcols:%s\n",*cols);
+                                    fprintf(stderr,"sharding_arr[i].stixdb_path:%s\n",sharding_arr[shard_idx].stixdb_path);
+                                    sqlite3 *db = NULL;
+                                    char **col_vals = NULL, **col_names = NULL;
+                                    uint32_t num_col_vals = ped_get_cols_info_by_id(
+                                        sharding_arr[i].stixdb_path,
+                                        &db,
+                                        cols,
+                                        num_cols,
+                                        i, 
+                                        &col_vals,
+                                        &col_names);
+                                    fprintf(stderr,"stix_sample_depth_string:%s,col_vals:%s,col_names:%d\n",stix_sample_depth_string,col_vals[0],*col_names[0]);          
+                                    if (stix_sample_depth_string != NULL)
+                                    {
+                                        ret = asprintf(&tmp_string,
+                                                       "%s,%s|%u",
+                                                       stix_sample_depth_string,
+                                                       col_vals[0],
+                                                       sample_alt_depths[i].first +
+                                                           sample_alt_depths[i].second);
+                                    }
+                                    else
+                                    {
+                                        ret = asprintf(&tmp_string,
+                                                       "%s|%u",
+                                                       col_vals[0],
+                                                       sample_alt_depths[i].first +
+                                                           sample_alt_depths[i].second);
+                                        
+                                    }
+                                    
+                                    stix_sample_depth_string = tmp_string;
+
+                                }
+                            }
+                            
+
+                            
+                            if (stix_sample_depth_string != NULL)
+                            {
+                                ret = bcf_update_info_string(
+                                    hdr,
+                                    line,
+                                    "STIX_SAMPLE_DEPTH",
+                                    stix_sample_depth_string);
+                                if (ret != 0)
+                                    errx(EX_DATAERR,
+                                         "Error adding STIX_SAMPLE_DEPTH to "
+                                         "info field.\n");
+                            }
+                            // free(col_vals[0]);
+                            // free(col_vals);
+                            // free(col_names[0]);
+                            // free(col_names);
+                            // sqlite3_close(db);
+                        }
+                        
+                        free(stix_sample_depth_string);
+
+                    }
+                    ----------------------------------------
+                    */
+
+                    ret = bcf_update_info_int32(hdr,
+                                                line,
+                                                "STIX_ZERO",
+                                                &zero_count,
+                                                1);
+                    if (ret != 0)
+                        errx(EX_DATAERR,
+                             "Error adding STIX_ZERO to info field.\n");
+
+                    ret = bcf_update_info_int32(hdr,
+                                                line,
+                                                "STIX_ONE",
+                                                &one_count,
+                                                1);
+                    if (ret != 0)
+                        errx(EX_DATAERR,
+                             "Error adding STIX_ONE to info field.\n");
+
+                    ret = bcf_update_info_int32(hdr,
+                                                line,
+                                                "STIX_ONE_MIN_READS",
+                                                &min_supporting_reads,
+                                                1);
+                    if (ret != 0)
+                        errx(EX_DATAERR,
+                             "Error adding STIX_ONE to info field.\n");
+
+                    uint32_t quants[3] = {Q1, Q2, Q3};
+                    ret = bcf_update_info_int32(hdr,
+                                                line,
+                                                "STIX_QUANTS",
+                                                quants,
+                                                3);
+                    if (ret != 0)
+                        errx(EX_DATAERR,
+                             "Error adding STIX_QUANTS to info field.\n");
+
+                    ret = bcf_update_info_int32(hdr,
+                                                line,
+                                                "STIX_QUANT_DEPTHS",
+                                                counts,
+                                                4);
+                    if (ret != 0)
+                        errx(EX_DATAERR,
+                             "Error adding STIX_QUANT_DEPTHS to info field.\n");
+
+                    bcf_write(out_f, hdr, line);
+
+                    /*
+                    fprintf(stdout,
+                            "0:1\t%d:%d\t%u:%u:%u\t%d:%d:%d:%d\n",
+                            zero_count, one_count,
+                            Q1, Q2, Q3,
+                            counts[0], counts[1], counts[2], counts[3]);
+                    */
+                   for (int i = 0; i < sharding_arr_length; i++) {
+                        free(sample_ids_all[i]); // 假设这里存储的是通过malloc分配的uint32_t*
+                        free(sample_alt_depths_all[i]); // 假设这里存储的是通过malloc分配的struct uint_pair*
+                   }
+
+                //    if (Iter_number % max_iter == 0)
+                //    {
+                //        for (int i = 0; i < sharding_arr_length; ++i)
+                //        {
+                //            giggle_index_destroy(&gi_all[i]);
+                //            cache.destroy();
+                //            gi_all[i] =NULL;
+                //        }
+                //    }
+                //    else
+                //    {
+                //        fprintf(stderr, "new index..\n");
+                //    }
+                }
+
+                free(left->chrm);
+                free(left);
+                free(right->chrm);
+                free(right);
+
+            }
+
+            bcf_destroy(line);
+            bcf_hdr_destroy(hdr);
+            hts_close(fp);
+            hts_close(out_f);
+
+
+            /*----------*/
         }
 
+            
              /*
              from xinchang
              destory gi at the end of all query in the shard mode

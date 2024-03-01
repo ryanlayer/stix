@@ -56,6 +56,14 @@ testshard:all
 test:all
 	../bin/stix -B ../test2/shard.tsv	-s 10 -l 1:92345-92467 -r 1:116789-116799 -t DEL
 
+
+testvcf:all
+	valgrind --tool=memcheck --leak-check=full  ../bin/stix -B ../test2/shard.tsv	-f ../test2/demo.vcf	-s 10 -v Sample
+
+testvcf2:all
+	../bin/stix -B ../test2/shard.tsv	-f ../test2/demo.vcf	-s 10 -v Sample
+
+
 testQ:all
 	../bin/stix -B ../test2/shard.tsv -Q ../test2/table.txt	-s 10
 

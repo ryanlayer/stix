@@ -876,16 +876,18 @@ uint32_t ped_get_cols_info_by_id(char *ped_file_name_db,
 {
     char *err_msg = NULL;
     int ret;
-
+    
     if (*db == NULL) {
-        ret = sqlite3_open(ped_file_name_db, db);
+        //  fprintf(stderr,">>>>>>>>>>>>>>>>>\n");
+        ret = sqlite3_open(ped_file_name_db, db); //  Segmentation fault (core dumped) in -v shrding mode
+        // fprintf(stderr,"ret = %d\n",ret);
         if( ret != SQLITE_OK )
             err(EX_NOINPUT,
                 "ERROR ped_get_cols_info_by_id(): "
                 "SQL error '%s' for database '%s'",
                 err_msg, ped_file_name_db);
     }
-
+    // fprintf(stderr,">>>>>>>>>>>>>>>>>\n");
 
     char *all_cols = NULL;
     if (num_cols > 0) {
@@ -914,6 +916,7 @@ uint32_t ped_get_cols_info_by_id(char *ped_file_name_db,
                    "Giggle_File_Id == %u",
                    all_cols,
                    sample_id);
+    // fprintf(stderr,">>>>>>>>>>>>>>>>> %s\n",q_select);
     if (ret == -1)
         err(EX_OSERR, 
             "ERROR ped_get_cols_info_by_id(): "

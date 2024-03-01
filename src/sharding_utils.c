@@ -102,7 +102,9 @@ Shard *read_shards_from_file(const char *filename, int *shard_len)
             // free(shards_array);
             // shards_array = shards_array_temp;
         }
+        // fhandler
         // shard_len = line_no;
+        fclose(fhandler);
     }
 
     // fprintf(stderr,">>>>%s,%s,%s,%d\n",
@@ -214,6 +216,7 @@ TableQuery *read_table_queries_from_file(const char *filename, int *table_len)
             }
             tablequery_array[*table_len - 1] = tablequery;
         }
+        fclose(fhandler);
     }
     return tablequery_array;
 }
