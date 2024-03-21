@@ -2,7 +2,7 @@ BIN=../bin
 OBJ=../obj
 GIGGLE_ROOT=../../giggle
 HTS_ROOT=$(GIGGLE_ROOT)/lib/htslib
-CFLAGS=-O2 -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
+CFLAGS=-O2 -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized 
 #CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
 INCLUDES=-I$(HTS_ROOT) -I$(GIGGLE_ROOT) -I$(SQLITE_ROOT)
 LIBS=-ldl -lz -lm -pthread -lcurl

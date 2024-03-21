@@ -353,6 +353,8 @@ uint32_t ped_create_db(char *ped_file_name,
         // strip out the path info from names
         giggle_names_order[i].str = strdup(basename(names[i]));
     }
+
+    // ### quick sort, the last parameter is the sort function.
     qsort(giggle_names_order, 
           num_files,
           sizeof(struct uint32_t_str_pair),
@@ -548,7 +550,9 @@ uint32_t ped_create_db(char *ped_file_name,
                 struct uint32_t_str_pair tmp_pair;
                 tmp_pair.str = word;
 
-                struct uint32_t_str_pair *giggle_file_i =
+                //struct uint32_t_str_pair *   =
+
+                struct uint32_t_str_pair * giggle_file_i  =
                     bsearch(&tmp_pair,
                             giggle_names_order, 
                             num_files,
