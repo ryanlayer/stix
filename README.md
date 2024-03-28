@@ -14,7 +14,11 @@ usage:   stix <options>
          options:
              -i  index directory
              -s  slop
+             -P  padding base piars for query insertion(default 50)
              -p  PED file
+             -B  Sharding file
+             -Q  Batch queries in table format(left \t right \t len \t SVtype \t ID)
+             -T  Threshold to define STIX_ONE(How many supporting reads define a hit) (default:1)
              -c  Alt file column (default 1)
              -d  PED database file
              -r  right SV region
@@ -23,7 +27,13 @@ usage:   stix <options>
              -a  List of columns to aggregate over
              -F  Filter samples by PED field query
              -j  JSON output
+             -t  SV type (DEL,INS,INV,DUP,BND)
+             -L  Length of Insertion(use it when -t INS)
+             -R  Relative Erorr Threshold to compare the length of query INS and targeted INS (0.0-1.0) (default:0.15)
+             -v  Add sample depth to VCF file
              -S  Give only summary
+             -D  Give sample depth array
+             -V  Verbose mode(print debug information, will increase output file size greatly)
 ```
 
 ## Example
