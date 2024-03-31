@@ -20,9 +20,12 @@
 
 extern int V_is_set;
 extern int L_is_set;
+extern int T_is_set;
 extern float R_is_set;
 extern int length_of_insertion;
 extern float ovpct_threshold;
+extern uint32_t min_supporting_reads;
+
 
 uint32_t safe_sub(uint32_t a, uint32_t b)
 {
@@ -836,18 +839,21 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                uint32_t ins_padding,
                                uint32_t *sample_ids,
                                uint32_t num_samples,
-                               struct uint_pair **sample_alt_depths)
+                               struct uint_pair **sample_alt_depths,
+                               int mode
+                               )
 {
-
-    fprintf(stderr,
-            "stix_run_giggle_query: "
-            "left:%s %u %u\tright:%s %u %u\n",
-            q_left_bp->chrm,
-            q_left_bp->start,
-            q_left_bp->end,
-            q_right_bp->chrm,
-            q_right_bp->start,
-            q_right_bp->end);
+    if (mode == 0){
+        fprintf(stderr,
+        "stix_run_giggle_query: "
+        "left:%s %u %u\tright:%s %u %u\n",
+        q_left_bp->chrm,
+        q_left_bp->start,
+        q_left_bp->end,
+        q_right_bp->chrm,
+        q_right_bp->start,
+        q_right_bp->end);
+    }
 
     if (*gi == NULL)
     {
@@ -1238,9 +1244,11 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
         if you do a sum of sample_alt_depths, you are counting the number of split reads evidence
         */
         sum = sample_alt_depths[idx].first + sample_alt_depths[idx].second; 
-        if (sum == 0)
+        // if (sum == 0)
+        if (sum < min_supporting_reads)
             *zero_count = *zero_count + 1;
-        else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+        // else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+        else if (sum >= min_supporting_reads) /* What happens if there are more than 1 split reads evidence? */
             *one_count = *one_count + 1;
         else
         {
@@ -1253,6 +1261,92 @@ uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
 
         if (*max < sum)
             *max = sum;
+    }
+
+    uint32_t ret = stix_get_quartile_counts(full,
+                                            full_i,
+                                            Q1,
+                                            Q2,
+                                            Q3,
+                                            counts);
+    free(full);
+    return 0;
+}
+//}}}
+
+
+/*
+from xinchang
+In sharding mode we should not include the filter function,beacuse index are start from 0 in each shard.
+*/
+//{{{ uint32_t stix_get_summary_shard(struct uint_pair *sample_alt_depths,
+uint32_t stix_get_summary_shard(struct uint_pair *sample_alt_depths_all[],
+                          uint32_t *sample_ids_all[],
+                          uint32_t num_samples_all[],
+                          uint32_t num_samples_size,
+                          int32_t *zero_count,
+                          int32_t *one_count,
+                          uint32_t *Q1,
+                          uint32_t *Q2,
+                          uint32_t *Q3,
+                          uint32_t *min,
+                          uint32_t *max,
+                          int32_t *counts)
+{
+    *zero_count = 0;
+    *one_count = 0;
+    *min = INT_MAX;
+    *max = 0;
+
+    // uint32_t  num_samples_size = sizeof(num_samples_all) / sizeof(num_samples_all[0]);
+    uint32_t num_samples_sum = 0;
+    for(uint32_t i=0;i<num_samples_size;i++)
+        num_samples_sum = num_samples_sum + num_samples_all[i];
+
+    uint32_t *full = (uint32_t *)calloc(num_samples_sum, sizeof(uint32_t));
+    uint32_t full_i = 0;
+
+    uint32_t i, sum, idx;
+
+    for (size_t num_sample_idx = 0; num_sample_idx < num_samples_size; num_sample_idx++)
+    {
+        uint32_t num_samples = num_samples_all[num_sample_idx];
+        for (i = 0; i < num_samples; ++i)
+        {
+            // if (sample_ids != NULL)
+            //     idx = sample_ids[i];
+            // else
+            idx = i;
+
+            /*from xinchang
+            sample_alt_depths counts the number of evidence == 0 and number of evidence ==1 which is in the seventh column of excord output
+            evidence == 0 ==> paird reads evidence
+            evidence == 1 ==> split reads evidence
+            if you do a sum of sample_alt_depths, you are counting the number of split reads evidence
+            */
+            sum = sample_alt_depths_all[num_sample_idx][idx].first + sample_alt_depths_all[num_sample_idx][idx].second;
+            // if (sum == 0)
+            //     *zero_count = *zero_count + 1;
+            // else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+
+
+            if (sum < min_supporting_reads)
+                *zero_count = *zero_count + 1;
+            // else if (sum >= 1) /* What happens if there are more than 1 split reads evidence? */
+            else if (sum >= min_supporting_reads) /* What happens if there are more than 1 split reads evidence? */
+                *one_count = *one_count + 1;
+            else
+            {
+                full[full_i] = sum;
+                full_i += 1;
+            }
+
+            if (*min > sum)
+                *min = sum;
+
+            if (*max < sum)
+                *max = sum;
+        }
     }
 
     uint32_t ret = stix_get_quartile_counts(full,
@@ -1364,9 +1458,6 @@ uint32_t stix_get_vcf_breakpoints(htsFile *fp,
 
     if (ret == -1) // if END is missing,try to calculate the end from SVLEN tag
     {
-
-
-
 
         if (ret_svlen == -1)
         {

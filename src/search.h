@@ -38,7 +38,9 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                uint32_t ins_padding,
                                uint32_t *sample_ids,
                                uint32_t num_samples,
-                               struct uint_pair **sample_alt_depths);
+                               struct uint_pair **sample_alt_depths,
+                               int mode
+                               );
 
 uint32_t stix_check_sv(struct stix_breakpoint *q_left_bp,
                         struct stix_breakpoint *q_right_bp,
@@ -110,6 +112,20 @@ uint32_t stix_get_quartile_counts(uint32_t *full,
 uint32_t stix_get_summary(struct uint_pair *sample_alt_depths,
                           uint32_t *sample_ids,
                           uint32_t num_samples,
+                          int32_t *zero_count,
+                          int32_t *one_count,
+                          uint32_t *Q1,
+                          uint32_t *Q2,
+                          uint32_t *Q3,
+                          uint32_t *min,
+                          uint32_t *max,
+                          int32_t *counts);
+
+
+uint32_t stix_get_summary_shard(struct uint_pair *sample_alt_depths_all[],
+                          uint32_t *sample_ids_all[],
+                          uint32_t num_samples_all[],
+                          uint32_t num_samples_size,
                           int32_t *zero_count,
                           int32_t *one_count,
                           uint32_t *Q1,

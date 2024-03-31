@@ -186,7 +186,7 @@ with open(args.output, 'w') as outf:
                     continue
 
         #stats
-            
+
         success_records_count.append(SVTYPE)
 
         # output
