@@ -606,6 +606,7 @@ void print_results_shard(
                     printf(",\"Pairend\":\"%u\",\"Split\":\"%u\"}\n",
                            sample_alt_depths_all[num_sample_idx][i].first,
                            sample_alt_depths_all[num_sample_idx][i].second);
+                    // fflush(stdout);
                 }
                 else
                 {
@@ -626,14 +627,18 @@ void print_results_shard(
                     printf("%u\t%u\n",
                            sample_alt_depths_all[num_sample_idx][i].first,
                            sample_alt_depths_all[num_sample_idx][i].second);
+                    // fflush(stdout);
                 }
             }
             sqlite3_close(db);
+        fflush(stdout);
         }
     }
 
-    if (json_out == 1)
+    if (json_out == 1){
         printf("]}}");
+        fflush(stdout);
+    }
 
     // sqlite3_close(db);
 }
@@ -1348,7 +1353,7 @@ int main(int argc, char **argv)
                        table_query_arr[table_q_idx].len,
                        table_query_arr[table_q_idx].svtype,
                        table_query_arr[table_q_idx].ID);
-                // fflush(stdout);
+                fflush(stdout);
 
                 struct stix_breakpoint *left = NULL, *right = NULL;
                 left = stix_region_to_breakpoint(table_query_arr[table_q_idx].left_str);
