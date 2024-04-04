@@ -2,8 +2,8 @@ BIN=../bin
 OBJ=../obj
 GIGGLE_ROOT=../../giggle
 HTS_ROOT=$(GIGGLE_ROOT)/lib/htslib
-CFLAGS=-O2 -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized 
-#CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
+# CFLAGS=-O2 -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized  
+CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Werror -Wuninitialized
 INCLUDES=-I$(HTS_ROOT) -I$(GIGGLE_ROOT) -I$(SQLITE_ROOT)
 LIBS=-ldl -lz -lm -pthread -lcurl
 LIBS+=-lcrypto
@@ -20,12 +20,16 @@ OBJS=$(addprefix $(OBJ)/, $(LIB))
 
 .SECONDARY: $(OBJS)
 
+# for debugging generates stix_dev
+PROG_DEV=stix_dev
+LIST_DEV=$(SQLITE_ROOT)/sqlite3.o $(addprefix $(BIN)/, $(PROG_DEV))
+alldev: check-env $(LIST_DEV)
+
 
 PROG=stix
-
 LIST=$(SQLITE_ROOT)/sqlite3.o $(addprefix $(BIN)/, $(PROG))
-
 all: check-env $(LIST)
+
 
 $(SQLITE_ROOT)/sqlite3.o: $(SQLITE_ROOT)/sqlite3.c
 	$(CC) -c $(SQLITE_ROOT)/sqlite3.c -o $(SQLITE_ROOT)/sqlite3.o
@@ -35,6 +39,16 @@ $(OBJ)/%.o: %.c
 		$(INCLUDES) 
 
 $(BIN)/%: %.c $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ \
+		$(INCLUDES) \
+		-DSAMTOOLS=1 \
+		$(GIGGLE_ROOT)/lib/libgiggle.a \
+		$(HTS_ROOT)/libhts.a \
+		$(SQLITE_ROOT)/sqlite3.o \
+		$(LIBS)
+
+# for debugging generates stix_dev
+$(BIN)/$(PROG): stix.c $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ \
 		$(INCLUDES) \
 		-DSAMTOOLS=1 \

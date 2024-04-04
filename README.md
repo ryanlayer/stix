@@ -48,7 +48,7 @@ samtools view -b s3://1000genomes/phase3/data/NA12878/alignment/NA12878.mapped.I
 samtools view -b s3://1000genomes/phase3/data/HG00674/alignment/HG00674.mapped.ILLUMINA.bwa.CHS.low_coverage.20121211.bam 13 14 > HG00674.13.14.bam
 ```
 
-To create an STIX index, use `excord` to extract discordant paired-end reads and
+To create an STIX index on short-reads dataset, use `excord` to extract discordant paired-end reads and
 split reads.
 ```
 mkdir four_alt
@@ -64,6 +64,25 @@ for sample in NA12812.13.14 HG00672.13.14 NA12878.13.14 HG00674.13.14; do
         /dev/stdin \
     | LC_ALL=C sort --buffer-size 2G -k1,1 -k2,2n -k3,3n \
     | bgzip -c > four_alt/$sample.bed.gz
+done
+```
+
+To create an STIX index on long-reads dataset, use `excord-lr` to extract 
+split reads.
+
+
+```
+mkdir four_alt
+wget -O excord https://github.com/zhengxinchang/excord-lr/releases/download/v0.1.17/excord-lr
+chmod +x excord-lr
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
+
+for sample in NA12812.13.14 HG00672.13.14 NA12878.13.14 HG00674.13.14; do
+
+    ./excord-lr -b $sample.bam -o $sample.bed
+
+    LC_ALL=C sort --buffer-size 2G -k1,1 -k2,2n -k3,3n $sample.bed \
+    > bgzip -c > four_alt/$sample.bed.gz
 done
 ```
 
