@@ -853,6 +853,7 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
         q_right_bp->chrm,
         q_right_bp->start,
         q_right_bp->end);
+        fflush(stderr);
     }
 
     if (*gi == NULL)
