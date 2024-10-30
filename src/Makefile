@@ -8,7 +8,7 @@ INCLUDES=-I$(HTS_ROOT) -I$(GIGGLE_ROOT) -I$(SQLITE_ROOT)
 LIBS=-ldl -lz -lm -pthread -lcurl
 LIBS+=-lcrypto
 SQLITE_ROOT=../../sqlite-amalgamation-3170000
-CC=gcc
+CC=gcc -fcommon
 
 LIB=ped.o \
     search.o\
