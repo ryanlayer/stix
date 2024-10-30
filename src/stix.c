@@ -1435,7 +1435,7 @@ int main(int argc, char **argv)
 
                 if (table_query_arr != NULL)
                 {
-                    for (int i; i < table_query_length; i++)
+                    for (int i=0; i < table_query_length; i++)
                     {
                         free(table_query_arr[i].left_str);
                         free(table_query_arr[i].right_str);
