@@ -41,6 +41,8 @@ void update_vcf_header(bcf_hdr_t *hdr,
 int help(int exit_code)
 {
     fprintf(stderr,
+            "STIX: Structural Variant Index\n"
+            "Version: 2.0.0\n"
             "usage:   stix <options>\n"
             "         options:\n"
             "             -i  index directory\n"
@@ -84,13 +86,11 @@ void print_results(struct giggle_index *gi,
                    uint32_t summary_only,
                    uint32_t depths_only)
 {
-    uint32_t i;
-
+    uint32_t i; 
     uint32_t num_col_vals;
     int32_t zero_count, one_count;
     uint32_t Q1, Q2, Q3, min, max;
     int32_t counts[4];
-
     uint32_t ret = stix_get_summary(sample_alt_depths,
                                     sample_ids,
                                     num_samples,
