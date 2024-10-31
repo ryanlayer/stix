@@ -61,7 +61,7 @@ docker pull zhengxc1993/stix-suite:<version>
 Run tools
 
 ```
-docker run --rm  zhengxc1993/stix-suite:<version> stix 
+docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd zhengxc1993/stix-suite:<version> stix 
 
 ```
 
@@ -70,7 +70,7 @@ docker run --rm  zhengxc1993/stix-suite:<version> stix
 
 
 #### 1.0.1
-
+<details>
 - stix[b3fedd9]
 
 - giggle[4071cb7]
@@ -81,7 +81,7 @@ docker run --rm  zhengxc1993/stix-suite:<version> stix
 
 - stix-merge[1.0.0]
 
-<details>
+
 
 ```bash
 cd stix-suite
@@ -89,10 +89,12 @@ docker build -t stix-suite:1.0.0 -f Dockerfile  versions/1.0.1/
 docker tag 784ea063777c zhengxc1993/stix-suite:1.0.1
 docker push zhengxc1993/stix-suite:1.0.1
 ```
-
 </details>
 
+
 #### 1.0.0
+
+<details>
 
 - stix[b3fedd9]
 
@@ -102,7 +104,6 @@ docker push zhengxc1993/stix-suite:1.0.1
 
 - excord-lr[v0.1.17]
 
-<details>
 
 ```bash
 stix-suite
@@ -112,9 +113,104 @@ docker push zhengxc1993/stix-suite:1.0.0
 ```
 </details>
 
+## Example(long-read)
 
 
-## Example
+### Setup demo
+
+```
+git clone https://github.com/zhengxinchang/stix.git
+cd stix/demo 
+```
+
+### Build index
+
+```
+# giggle index
+docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
+    sh -c "cd /wkspace/;  giggle index -i "data/*.bed.gz"  -o ./giggle_idx -s -f"
+
+# stix index
+docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
+    sh -c "cd /wkspace/; stix  -i giggle_idx/ -d stix_idx.db  -p meta.ped  -c 5"
+
+```
+
+
+### Annotate a single SV
+
+
+**deletion**
+```
+docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
+    sh -c "cd /wkspace/; stix \
+                        -i giggle_idx/ \
+                        -d stix_idx.db \
+                        -s 100  \
+                        -t DEL \
+                        -l 1:1076253-1076253 \
+                        -r 1:1076434-1076434  "
+```
+output:
+
+```
+stix_run_giggle_query: left:1 1076253 1076253   right:1 1076434 1076434
+Total   0:1     0:1     0:0:0   0:0:0:0
+Giggle_File_Id  Sample  Sex     population      Super_population        Alt_File        Pairend Split
+0       demo_hg002_hifi NA      NA      NA      demo_hg002_hifi.bed.gz  0       15
+```
+
+**insertion**
+
+```
+docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
+    sh -c "cd /wkspace/; stix \
+                        -i giggle_idx/ \
+                        -d stix_idx.db \
+                        -s 100  \
+                        -t INS \
+                        -l 1:3477303-3477303  \
+                        -r 1:3477303-3479646  "
+```
+
+output
+
+```
+stix_run_giggle_query: left:1 3477303 3477303   right:1 3477303 3479646
+Total   0:1     0:1     0:0:0   0:0:0:0
+Giggle_File_Id  Sample  Sex     population      Super_population        Alt_File        Pairend Split
+0       demo_hg002_hifi NA      NA      NA      demo_hg002_hifi.bed.gz  0       17
+```
+
+
+
+**Annotate an VCF file**
+
+```
+
+docker run --rm -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
+    sh -c "cd /wkspace/; stix \
+                        -i giggle_idx/ \
+                        -d stix_idx.db \
+                        -s 100  \
+                        -T  5  \
+                        -f demo-query.vcf  \
+                        | tee ann.vcf 1>/dev/null"
+
+```
+
+output
+
+```
+ann.vcf # it should be exactly same with output.ann.vcf.
+```
+
+For a specific SV,the `STIX_ZERO` and `STIX_ON`E indicate the `number of positive sample` and `number of negative samples` respectively.
+The frequency can be calculated with `STIX_ONE/(STIX_ONE + STIX_ZERO)`.
+
+
+
+## Example(short-read)
 
 The following example is based on four sample BAMs from the 1000 Genomes
 project:
