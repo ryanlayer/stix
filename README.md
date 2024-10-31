@@ -36,83 +36,6 @@ usage:   stix <options>
              -V  Verbose mode(print debug information, will increase output file size greatly)
 ```
 
-
-## STIX suite
-
-This repository contains all related tools for using STIX. It includes:
-
-1. STIX  (main program)
-2. Giggle (tool for indexing)
-3. excord (SV singals extraction for short-read)
-4. excordlr (SV singals extraction for long-read)
-
-The bundled toolset will be published as docker images with version numbers. Please note that the version is NOT the stix version, it is the stix-suite version. 
-
-
-### How to use
-
-Download the docker image with specific version
-
-```
-docker pull zhengxc1993/stix-suite:<version>
-
-```
-
-Run tools
-
-```
-docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd zhengxc1993/stix-suite:<version> stix 
-
-```
-
-
-### Versions
-
-
-#### 1.0.1
-<details>
-- stix[b3fedd9]
-
-- giggle[4071cb7]
-
-- excord[v0.2.4]
-
-- excord-lr[v0.1.17]
-
-- stix-merge[1.0.0]
-
-
-
-```bash
-cd stix-suite
-docker build -t stix-suite:1.0.0 -f Dockerfile  versions/1.0.1/
-docker tag 784ea063777c zhengxc1993/stix-suite:1.0.1
-docker push zhengxc1993/stix-suite:1.0.1
-```
-</details>
-
-
-#### 1.0.0
-
-<details>
-
-- stix[b3fedd9]
-
-- giggle[4071cb7]
-
-- excord[v0.2.4]
-
-- excord-lr[v0.1.17]
-
-
-```bash
-stix-suite
-docker build -t stix-suite:1.0.0 -f Dockerfile  versions/1.0.0/
-docker tag 784ea063777c zhengxc1993/stix-suite:1.0.0
-docker push zhengxc1993/stix-suite:1.0.0
-```
-</details>
-
 ## Example(long-read)
 
 
@@ -126,11 +49,11 @@ cd stix/demo
 ### Build index
 
 ```
-# giggle index
+# giggle index, takes ~15s
 docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
     sh -c "cd /wkspace/;  giggle index -i "data/*.bed.gz"  -o ./giggle_idx -s -f"
 
-# stix index
+# stix index, takes ~1s
 docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
     sh -c "cd /wkspace/; stix  -i giggle_idx/ -d stix_idx.db  -p meta.ped  -c 5"
 
@@ -142,6 +65,7 @@ docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspa
 
 **deletion**
 ```
+# runtime: ~1s
 docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
     sh -c "cd /wkspace/; stix \
                         -i giggle_idx/ \
@@ -163,6 +87,7 @@ Giggle_File_Id  Sample  Sex     population      Super_population        Alt_File
 **insertion**
 
 ```
+# runtime: ~1s
 docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
     sh -c "cd /wkspace/; stix \
                         -i giggle_idx/ \
@@ -176,6 +101,7 @@ docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd -v $(pwd):/wkspa
 output
 
 ```
+
 stix_run_giggle_query: left:1 3477303 3477303   right:1 3477303 3479646
 Total   0:1     0:1     0:0:0   0:0:0:0
 Giggle_File_Id  Sample  Sex     population      Super_population        Alt_File        Pairend Split
@@ -187,7 +113,7 @@ Giggle_File_Id  Sample  Sex     population      Super_population        Alt_File
 **Annotate an VCF file**
 
 ```
-
+# runtime: ~2s
 docker run --rm -v $(pwd):/wkspace/ zhengxc1993/stix-suite:1.0.1  \
     sh -c "cd /wkspace/; stix \
                         -i giggle_idx/ \
@@ -318,7 +244,89 @@ stix -i four_alt_db -d four.ped.db -s 500 -f 1kg.four.13.14.vcf.gz
 ```
 
 
-## Build
+## Installation/Build
+
+STIX can be built and run on the Linux system. The installation time on a normal PC usually takes 10-15 minutes, depending on the hardware.
+
+### STIX suite
+
+We recommend using the STIX suite image to use STIX and related tools. These tools include:
+
+1. STIX  (main program)
+2. Giggle (tool for indexing)
+3. excord (SV singals extraction for short-read)
+4. excordlr (SV singals extraction for long-read)
+
+The bundled toolset will be published as docker images with version numbers. Please note that the version is NOT the stix version, it is the stix-suite version. 
+
+
+#### How to use
+
+Download the docker image with specific version
+
+```
+docker pull zhengxc1993/stix-suite:<version>
+
+```
+
+Run tools
+
+```
+docker run --rm -u $(id -u):$(id -g) -v /etc/passwd:/etc/passwd zhengxc1993/stix-suite:<version> stix 
+
+```
+
+
+#### Versions
+
+
+##### 1.0.1
+<details>
+- stix[b3fedd9]
+
+- giggle[4071cb7]
+
+- excord[v0.2.4]
+
+- excord-lr[v0.1.17]
+
+- stix-merge[1.0.0]
+
+
+
+```bash
+cd stix-suite
+docker build -t stix-suite:1.0.0 -f Dockerfile  versions/1.0.1/
+docker tag 784ea063777c zhengxc1993/stix-suite:1.0.1
+docker push zhengxc1993/stix-suite:1.0.1
+```
+</details>
+
+
+##### 1.0.0
+
+<details>
+
+- stix[b3fedd9]
+
+- giggle[4071cb7]
+
+- excord[v0.2.4]
+
+- excord-lr[v0.1.17]
+
+
+```bash
+stix-suite
+docker build -t stix-suite:1.0.0 -f Dockerfile  versions/1.0.0/
+docker tag 784ea063777c zhengxc1993/stix-suite:1.0.0
+docker push zhengxc1993/stix-suite:1.0.0
+```
+</details>
+
+
+### build from source
+
 ```
 git clone https://github.com/ryanlayer/giggle.git
 cd giggle
