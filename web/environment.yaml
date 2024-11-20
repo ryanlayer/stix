@@ -1,0 +1,6 @@
+name: stix-web-server
+dependencies:
+  - python=3.12
+  - flask
+  - pydantic
+  - returns
