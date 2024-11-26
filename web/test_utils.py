@@ -1,3 +1,4 @@
+import os
 import sys
 import unittest
 from contextlib import redirect_stdout
@@ -255,6 +256,83 @@ class TestUtils(unittest.TestCase):
             )
         )
         self.assertEqual(result, expected)
+
+    def test_sharded_stix_queries(self):
+        """
+        Run this after building the test_index_b and test_index_b2 indexes
+        """
+        cmds = [
+            f"stix -i {os.path.abspath('test_index_b')} -d {os.path.abspath('test_index.ped.db')} -l 1:9997-10074 -r 1:10063-10113 -t BND -s 500 -j",
+            f"stix -i {os.path.abspath('test_index_b2')} -d {os.path.abspath('test_index2.ped.db')} -l 1:9997-10074 -r 1:10063-10113 -t BND -s 500 -j",
+        ]
+
+        results = sharded_stix_queries(cmds)
+
+        match results[0]:
+            case Success(result):
+                actual = json.loads(
+                    """
+                    {
+                        "results": {
+                            "summary": [
+                                {
+                                    "name": "Total",
+                                    "zero_count":"0",
+                                    "one_count":"1",
+                                    "quantiles":["0","0","0"],
+                                    "counts":["0","0","0","0"]
+                                }
+                            ],
+                            "samples": [
+                                {
+                                    "Giggle_File_Id":"0",
+                                    "Sample":"NA21123",
+                                    "Alt_file":"NA21123.bed.gz",
+                                    "Pairend":"26",
+                                    "Split":"0"
+                                }
+                            ]
+                        }
+                    }
+                    """
+                )
+                result = json.loads(result)
+                self.assertEqual(result, actual)
+            case Failure(error):
+                self.fail(f"Expected Success but got {error}")
+
+        match results[1]:
+            case Success(result):
+                actual = json.loads(
+                    """
+                    {
+                        "results": {
+                            "summary": [
+                                {
+                                    "name": "Total",
+                                    "zero_count":"0",
+                                    "one_count":"1",
+                                    "quantiles":["0","0","0"],
+                                    "counts":["0","0","0","0"]
+                                }
+                            ],
+                            "samples": [
+                                {
+                                    "Giggle_File_Id":"0",
+                                    "Sample":"NA21124",
+                                    "Alt_file":"NA21124.bed.gz",
+                                    "Pairend":"26",
+                                    "Split":"0"
+                                }
+                            ]
+                        }
+                    }
+                    """
+                )
+                result = json.loads(result)
+                self.assertEqual(result, actual)
+            case Failure(error):
+                self.fail(f"Expected Success but got {error}")
 
 
 if __name__ == "__main__":
