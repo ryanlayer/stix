@@ -5,7 +5,8 @@
 #include <getopt.h>
 #include <sysexits.h>
 #include <err.h>
-#include <sqlite3.h>
+
+#include <sqlite/sqlite3.h>
 
 #include <htslib/hfile.h>
 #include <htslib/vcf.h>
