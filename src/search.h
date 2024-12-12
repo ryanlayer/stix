@@ -10,7 +10,7 @@
 
 uint32_t safe_sub(uint32_t a, uint32_t b);
 
-char *stix_sv_type_strings[5];
+extern char *stix_sv_type_strings[5];
 
 enum stix_sv_type { DEL, DUP, INS, INV, BND };
 
