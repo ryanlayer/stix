@@ -1,12 +1,7 @@
 import argparse
-import subprocess
-import sys
-from typing import Optional
+from pprint import pprint
 
-from flask import Flask, render_template, request
-from returns.maybe import Maybe, Nothing, Some, maybe
-from returns.pipeline import flow
-from returns.result import Failure, Result, Success, safe
+from flask import Flask
 
 from utils import (
     construct_sharded_commands,
@@ -33,26 +28,29 @@ def parse_args() -> argparse.Namespace:
         "--port", dest="port", help="Port to run on", type=int, default=5000
     )
     parser.add_argument(
+        "--host", dest="host", help="IP to run on", type=str, default="127.0.0.1"
+    )
+    parser.add_argument(
         "--db_shards",
         dest="db_shards",
         help="sharded STIX ped db's",
-        narg="+",
-        type=list[str],
+        nargs="+",
+        type=str,
         required=True,
     )
     parser.add_argument(
         "--index_shards",
         dest="index_shards",
         help="sharded STIX indices",
-        narg="+",
-        type=list[str],
+        nargs="+",
+        type=str,
         required=True,
     )
     return parser.parse_args()
 
 
 ## App entry point ------------------------------------------------------------
-@app.route("/test")
+@app.route("/")
 def main():
     ## stix index info
     stix_path = app.config["stix_path"]
@@ -79,17 +77,21 @@ def main():
         )
         sharded_query_results = [cmd.bind(stix_query) for cmd in stix_shard_cmds]
         return merge_sharded_results(sharded_query_results).value_or("{}")
+    else:
+        return "only raw queries supported"
 
     ## OR pass the args to the render template
-    else:
-        return render_sv_view(left=left_bp, right=right_bp, svtype=svtype)
+    # else:
+    #     return render_sv_view(left=left_bp, right=right_bp, svtype=svtype)
 
 
 if __name__ == "__main__":
-
     args = parse_args()
     app.config["stix_path"] = args.stix_path
-    app.config["index_shards"] = args.indices
+    app.config["index_shards"] = args.index_shards
     app.config["db_shards"] = args.db_shards
-    print(args.db_path)
-    app.run(host="0.0.0.0", port=args.port)
+
+    pprint(args.db_shards)
+    pprint(args.index_shards)
+
+    app.run(host=args.host, port=args.port)
