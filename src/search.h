@@ -3,6 +3,7 @@
 
 #include <src/giggle_index.h>
 #include <src/lists.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <htslib/hfile.h>
@@ -39,7 +40,8 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                uint32_t *sample_ids,
                                uint32_t num_samples,
                                struct uint_pair **sample_alt_depths,
-                               int mode
+                               int mode,
+                               bool giggle_only
                                );
 
 uint32_t stix_check_sv(struct stix_breakpoint *q_left_bp,

@@ -840,7 +840,8 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
                                uint32_t *sample_ids,
                                uint32_t num_samples,
                                struct uint_pair **sample_alt_depths,
-                               int mode
+                               int mode,
+                               bool giggle_only
                                )
 {
     if (mode == 0){
@@ -1010,7 +1011,14 @@ uint32_t stix_run_giggle_query(struct giggle_index **gi,
 
             if (hit == 1)
             {
-                if (evidence_type == 0)
+                if (giggle_only) {
+                    // print each raw hit here rather than in print_results, to
+                    // avoid buffering the growing result set
+                    printf("%s\t%u\t%u\t%s\t%u\t%u\t%s\n",
+                           in_left_bp->chrm, in_left_bp->start, in_left_bp->end,
+                           in_right_bp->chrm, in_right_bp->start, in_right_bp->end,
+                           evidence_type == 0 ? "paired" : "split");
+                } else if (evidence_type == 0)
                     (*sample_alt_depths)[i].first += 1; // pairend-read
                 else
                     (*sample_alt_depths)[i].second += 1; // split-reads
