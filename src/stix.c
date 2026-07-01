@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -66,6 +67,7 @@ int help(int exit_code)
             "             -v  Add sample depth to VCF file\n"
             "             -S  Give only summary\n"
             "             -D  Give sample depth array\n"
+            "             -g  Only print raw giggle query results\n"
             "             -V  Verbose mode(print debug information, will increase output file size greatly)\n");
     return exit_code;
 }
@@ -757,8 +759,9 @@ int main(int argc, char **argv)
     uint32_t col_id = 1;
     uint32_t summary_only = 0;
     uint32_t depths_only = 0;
+    bool giggle_only = 0;
 
-    while ((c = getopt(argc, argv, "i:P:s:T:B:Q:p:c:d:r:l:f:a:F:jt:v:SDVL:R:")) != -1)
+    while ((c = getopt(argc, argv, "i:P:s:T:B:Q:p:c:d:r:l:f:a:F:jt:v:SDVgL:R:")) != -1)
     {
         switch (c)
         {
@@ -842,6 +845,9 @@ int main(int argc, char **argv)
             break;
         case 'D':
             depths_only = 1;
+            break;
+        case 'g':
+            giggle_only = 1;
             break;
         case 'V':
             V_is_set = 1;
@@ -958,22 +964,25 @@ int main(int argc, char **argv)
                                           sample_ids,
                                           num_samples,
                                           &sample_alt_depths,
-                                          0);
+                                          0,
+                                          giggle_only);
                 // DEBUG
                 //  printf("num_sample_alt_depths:%d\n",num_sample_alt_depths);
-                print_results(gi,
-                              ped_db_file_name,
-                              left,
-                              right,
-                              sample_ids,
-                              filter,
-                              sample_alt_depths,
-                              num_sample_alt_depths,
-                              agg_cols,
-                              num_agg_cols,
-                              j_is_set,
-                              summary_only,
-                              depths_only);
+                // giggle_only prints raw hits inside stix_run_giggle_query
+                if (!giggle_only)
+                    print_results(gi,
+                                  ped_db_file_name,
+                                  left,
+                                  right,
+                                  sample_ids,
+                                  filter,
+                                  sample_alt_depths,
+                                  num_sample_alt_depths,
+                                  agg_cols,
+                                  num_agg_cols,
+                                  j_is_set,
+                                  summary_only,
+                                  depths_only);
 
                 free(left->chrm);
                 free(left);
@@ -1040,7 +1049,8 @@ int main(int argc, char **argv)
                                                   sample_ids,
                                                   num_samples,
                                                   &sample_alt_depths,
-                                                  0);
+                                                  0,
+                                                  false);
 
                         uint32_t i;
                         uint32_t num_col_vals;
@@ -1266,7 +1276,8 @@ int main(int argc, char **argv)
                                           sample_ids,
                                           num_samples,
                                           &sample_alt_depths,
-                                          i);
+                                          i,
+                                          false);
                 /*
                 from xinchang
                 sample_alt_depths[0].first Pairend count for the first sample
@@ -1378,7 +1389,8 @@ int main(int argc, char **argv)
                                               sample_ids,
                                               num_samples,
                                               &sample_alt_depths,
-                                              i);
+                                              i,
+                                              false);
                     sample_ids_all[i] = sample_ids;
                     num_sample_alt_depths_all[i] = num_sample_alt_depths;
                     sample_alt_depths_all[i] = sample_alt_depths;
@@ -1534,7 +1546,8 @@ int main(int argc, char **argv)
                                                   sample_ids,
                                                   num_samples,
                                                   &sample_alt_depths,
-                                                  i);
+                                                  i,
+                                                  false);
                         sample_ids_all[i] = sample_ids;
                         num_sample_alt_depths_all[i] = num_sample_alt_depths;
                         sample_alt_depths_all[i] = sample_alt_depths;
